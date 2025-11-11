@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conciergerie Sportive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset et style global */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { line-height: 1.6; background-color: #f7f7f7; color: #333; }
+        a { text-decoration: none; color: inherit; }
+
+        /* Header */
+        header { background: #1e90ff; color: white; padding: 20px 0; text-align: center; }
+        header h1 { font-size: 2rem; }
+        nav { margin-top: 10px; }
+        nav a { margin: 0 15px; font-weight: bold; }
+
+        /* Section */
+        section { padding: 60px 20px; max-width: 1100px; margin: auto; }
+        h2 { font-size: 2rem; margin-bottom: 20px; color: #1e90ff; }
+
+        /* Services */
+        .services { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .service { background: white; padding: 20px; border-radius: 10px; flex: 1 1 250px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .service h3 { margin-bottom: 10px; color: #333; }
+
+        /* Tarifs */
+        .pricing { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .plan { background: white; padding: 30px; border-radius: 10px; flex: 1 1 250px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .plan h3 { margin-bottom: 10px; color: #333; }
+        .plan p { margin-bottom: 15px; font-size: 1.1rem; }
+
+        /* Contact */
+        form { background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        form input, form textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        form button { background: #1e90ff; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 5px; cursor: pointer; }
+        form button:hover { background: #007acc; }
+
+        /* Footer */
+        footer { text-align: center; padding: 20px; background: #1e90ff; color: white; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Conciergerie Sportive</h1>
+    <nav>
+        <a href="#services">Services</a>
+        <a href="#tarifs">Tarifs</a>
+        <a href="#contact">Contact</a>
+    </nav>
+</header>
+
+<section id="services">
+    <h2>Nos Services</h2>
+    <div class="services">
+        <div class="service">
+            <h3>Création & refonte de site</h3>
+            <p>Un site moderne et responsive pour votre club, facile à gérer.</p>
+        </div>
+        <div class="service">
+            <h3>Maintenance & support</h3>
+            <p>Nous nous occupons de tout : mises à jour, hébergement, sauvegardes.</p>
+        </div>
+        <div class="service">
+            <h3>Cybersécurité</h3>
+            <p>Protection complète des données de votre club et de vos membres.</p>
+        </div>
+        <div class="service">
+            <h3>Gestion digitale</h3>
+            <p>Outils pour gérer adhésions, paiements, événements et communications.</p>
+        </div>
+    </div>
+</section>
+
+<section id="tarifs">
+    <h2>Nos Tarifs</h2>
+    <div class="pricing">
+        <div class="plan">
+            <h3>Basique</h3>
+            <p>Site web + support technique</p>
+            <p>€50/mois</p>
+        </div>
+        <div class="plan">
+            <h3>Pro</h3>
+            <p>Site web + maintenance + cybersécurité</p>
+            <p>€100/mois</p>
+        </div>
+        <div class="plan">
+            <h3>Premium</h3>
+            <p>Tout inclus + gestion digitale complète</p>
+            <p>€200/mois</p>
+        </div>
+    </div>
+</section>
+
+<section id="contact">
+    <h2>Contactez-nous</h2>
+    <form>
+        <input type="text" placeholder="Nom du club" required>
+        <input type="email" placeholder="Email" required>
+        <textarea placeholder="Votre message" rows="5" required></textarea>
+        <button type="submit">Envoyer</button>
+    </form>
+</section>
+
+<footer>
+    <p>&copy; 2025 Conciergerie Sportive. Tous droits réservés.</p>
+</footer>
+
+</body>
+</html>

@@ -3,112 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conciergerie Sportive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* Reset et style global */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
-        body { line-height: 1.6; background-color: #f7f7f7; color: #333; }
-        a { text-decoration: none; color: inherit; }
-
-        /* Header */
-        header { background: #1e90ff; color: white; padding: 20px 0; text-align: center; }
-        header h1 { font-size: 2rem; }
-        nav { margin-top: 10px; }
-        nav a { margin: 0 15px; font-weight: bold; }
-
-        /* Section */
-        section { padding: 60px 20px; max-width: 1100px; margin: auto; }
-        h2 { font-size: 2rem; margin-bottom: 20px; color: #1e90ff; }
-
-        /* Services */
-        .services { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .service { background: white; padding: 20px; border-radius: 10px; flex: 1 1 250px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-        .service h3 { margin-bottom: 10px; color: #333; }
-
-        /* Tarifs */
-        .pricing { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .plan { background: white; padding: 30px; border-radius: 10px; flex: 1 1 250px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-        .plan h3 { margin-bottom: 10px; color: #333; }
-        .plan p { margin-bottom: 15px; font-size: 1.1rem; }
-
-        /* Contact */
-        form { background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        form input, form textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        form button { background: #1e90ff; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 5px; cursor: pointer; }
-        form button:hover { background: #007acc; }
-
-        /* Footer */
-        footer { text-align: center; padding: 20px; background: #1e90ff; color: white; margin-top: 40px; }
-    </style>
+    <title>Conciergerie Sportive — Le digital de votre club, clé en main</title>
+    <meta name="description" content="Conciergerie Sportive : création de site, maintenance, cybersécurité et gestion digitale pour les clubs sportifs. Concentrez-vous sur le terrain, on s'occupe du reste.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b1f3a'/><path d='M9 17l5 5 9-12' stroke='%23c6f432' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 </head>
 <body>
 
-<header>
-    <h1>Conciergerie Sportive</h1>
-    <nav>
-        <a href="#services">Services</a>
-        <a href="#tarifs">Tarifs</a>
-        <a href="#contact">Contact</a>
-    </nav>
+<header class="site-header" id="top">
+    <div class="container nav-wrap">
+        <a href="#top" class="logo" aria-label="Conciergerie Sportive, accueil">
+            <span class="logo-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32"><path d="M9 17l5 5 9-12"/></svg>
+            </span>
+            <span class="logo-text">Conciergerie <strong>Sportive</strong></span>
+        </a>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav id="main-nav" class="main-nav">
+            <a href="#services">Services</a>
+            <a href="#methode">Méthode</a>
+            <a href="#tarifs">Tarifs</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact" class="btn btn-small">Nous contacter</a>
+        </nav>
+    </div>
 </header>
 
-<section id="services">
-    <h2>Nos Services</h2>
-    <div class="services">
-        <div class="service">
-            <h3>Création & refonte de site</h3>
-            <p>Un site moderne et responsive pour votre club, facile à gérer.</p>
+<main>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-text">
+                <p class="eyebrow">Services digitaux pour clubs sportifs</p>
+                <h1>Vous gérez le terrain.<br><span class="accent">On gère le digital.</span></h1>
+                <p class="lead">Site web, maintenance, sécurité des données et outils de gestion : une seule équipe, un abonnement mensuel, zéro prise de tête pour vos bénévoles.</p>
+                <div class="hero-cta">
+                    <a href="#contact" class="btn">Demander un devis gratuit</a>
+                    <a href="#tarifs" class="btn btn-ghost">Voir les tarifs</a>
+                </div>
+                <ul class="hero-points">
+                    <li>Sans engagement</li>
+                    <li>Mise en ligne rapide</li>
+                    <li>Support en français</li>
+                </ul>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+                <div class="scoreboard">
+                    <div class="sb-head">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        <span class="sb-url">votreclub.fr</span>
+                    </div>
+                    <div class="sb-body">
+                        <div class="sb-row">
+                            <span>Site en ligne</span><span class="ok">✓</span>
+                        </div>
+                        <div class="sb-row">
+                            <span>Sauvegarde du jour</span><span class="ok">✓</span>
+                        </div>
+                        <div class="sb-row">
+                            <span>Certificat HTTPS</span><span class="ok">✓</span>
+                        </div>
+                        <div class="sb-row">
+                            <span>Nouvelles adhésions</span><span class="num">+12</span>
+                        </div>
+                        <div class="sb-bar"><span style="width: 78%"></span></div>
+                        <p class="sb-caption">Saison 2026-2027 · inscriptions ouvertes</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="service">
-            <h3>Maintenance & support</h3>
-            <p>Nous nous occupons de tout : mises à jour, hébergement, sauvegardes.</p>
+    </section>
+
+    <!-- SERVICES -->
+    <section id="services" class="section">
+        <div class="container">
+            <div class="section-head">
+                <p class="eyebrow">Nos services</p>
+                <h2>Tout le digital de votre club, au même endroit</h2>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M8 21h8M12 18v3"/></svg>
+                    </div>
+                    <h3>Création & refonte de site</h3>
+                    <p>Un site moderne, rapide et adapté au mobile, que vos bénévoles peuvent mettre à jour en quelques clics.</p>
+                </article>
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+                    </div>
+                    <h3>Maintenance & support</h3>
+                    <p>Mises à jour, hébergement, sauvegardes quotidiennes et une équipe joignable quand vous en avez besoin.</p>
+                </article>
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+                    </div>
+                    <h3>Cybersécurité</h3>
+                    <p>Protection des données de vos adhérents, conformité RGPD et surveillance contre les attaques.</p>
+                </article>
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    </div>
+                    <h3>Gestion digitale</h3>
+                    <p>Adhésions, paiements en ligne, événements et newsletters : des outils simples, reliés à votre site.</p>
+                </article>
+            </div>
         </div>
-        <div class="service">
-            <h3>Cybersécurité</h3>
-            <p>Protection complète des données de votre club et de vos membres.</p>
+    </section>
+
+    <!-- METHODE -->
+    <section id="methode" class="section section-dark">
+        <div class="container">
+            <div class="section-head">
+                <p class="eyebrow">Notre méthode</p>
+                <h2>Trois étapes, et votre club est en ligne</h2>
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">01</span>
+                    <h3>On échange</h3>
+                    <p>Un appel pour comprendre votre club, vos besoins et votre budget. Devis gratuit sous 48 h.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num">02</span>
+                    <h3>On construit</h3>
+                    <p>Nous créons ou modernisons votre site et configurons vos outils. Vous validez chaque étape.</p>
+                </li>
+                <li class="step">
+                    <span class="step-num">03</span>
+                    <h3>On s'occupe du reste</h3>
+                    <p>Mises à jour, sécurité, sauvegardes, support : vous n'avez plus à y penser.</p>
+                </li>
+            </ol>
         </div>
-        <div class="service">
-            <h3>Gestion digitale</h3>
-            <p>Outils pour gérer adhésions, paiements, événements et communications.</p>
+    </section>
+
+    <!-- TARIFS -->
+    <section id="tarifs" class="section">
+        <div class="container">
+            <div class="section-head">
+                <p class="eyebrow">Tarifs</p>
+                <h2>Un abonnement clair, sans surprise</h2>
+                <p class="section-sub">Sans engagement. Changez de formule quand vous voulez.</p>
+            </div>
+            <div class="pricing">
+                <article class="plan">
+                    <h3>Basique</h3>
+                    <p class="price"><span class="amount">50 €</span><span class="per">/mois</span></p>
+                    <p class="plan-desc">Pour les petits clubs qui veulent une vitrine fiable.</p>
+                    <ul class="features">
+                        <li>Site web responsive</li>
+                        <li>Hébergement & nom de domaine</li>
+                        <li>Support technique par e-mail</li>
+                    </ul>
+                    <a href="#contact" class="btn btn-outline" data-plan="Basique">Choisir Basique</a>
+                </article>
+                <article class="plan plan-featured">
+                    <span class="badge">Le plus choisi</span>
+                    <h3>Pro</h3>
+                    <p class="price"><span class="amount">100 €</span><span class="per">/mois</span></p>
+                    <p class="plan-desc">Pour les clubs qui veulent être tranquilles toute la saison.</p>
+                    <ul class="features">
+                        <li>Tout le pack Basique</li>
+                        <li>Maintenance & sauvegardes quotidiennes</li>
+                        <li>Cybersécurité & conformité RGPD</li>
+                        <li>Support prioritaire</li>
+                    </ul>
+                    <a href="#contact" class="btn" data-plan="Pro">Choisir Pro</a>
+                </article>
+                <article class="plan">
+                    <h3>Premium</h3>
+                    <p class="price"><span class="amount">200 €</span><span class="per">/mois</span></p>
+                    <p class="plan-desc">Pour les clubs qui veulent déléguer tout le digital.</p>
+                    <ul class="features">
+                        <li>Tout le pack Pro</li>
+                        <li>Adhésions & paiements en ligne</li>
+                        <li>Gestion des événements</li>
+                        <li>Newsletters & communication</li>
+                    </ul>
+                    <a href="#contact" class="btn btn-outline" data-plan="Premium">Choisir Premium</a>
+                </article>
+            </div>
         </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section section-alt">
+        <div class="container container-narrow">
+            <div class="section-head">
+                <p class="eyebrow">FAQ</p>
+                <h2>Questions fréquentes</h2>
+            </div>
+            <div class="faq">
+                <details>
+                    <summary>Notre club a déjà un site. Pouvez-vous le reprendre ?</summary>
+                    <p>Oui. Nous faisons un état des lieux de votre site actuel, puis nous le modernisons ou le migrons, sans perdre vos contenus.</p>
+                </details>
+                <details>
+                    <summary>Faut-il des compétences techniques pour mettre à jour le site ?</summary>
+                    <p>Non. Nous mettons en place une interface simple et formons vos bénévoles. Et si vous préférez, envoyez-nous vos actualités : on les publie pour vous.</p>
+                </details>
+                <details>
+                    <summary>Y a-t-il un engagement de durée ?</summary>
+                    <p>Aucun. L'abonnement est mensuel et résiliable à tout moment. Votre site et vos données restent les vôtres.</p>
+                </details>
+                <details>
+                    <summary>Comment protégez-vous les données de nos adhérents ?</summary>
+                    <p>Connexion chiffrée (HTTPS), sauvegardes quotidiennes, mises à jour de sécurité régulières et accompagnement sur la conformité RGPD.</p>
+                </details>
+                <details>
+                    <summary>Combien de temps pour mettre le site en ligne ?</summary>
+                    <p>Cela dépend du projet, mais un site vitrine est généralement en ligne en quelques semaines après validation du devis.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section">
+        <div class="container contact-grid">
+            <div class="contact-intro">
+                <p class="eyebrow">Contact</p>
+                <h2>Parlons de votre club</h2>
+                <p>Dites-nous en quelques mots ce dont vous avez besoin. Nous vous répondons sous 48 h avec une proposition adaptée.</p>
+                <ul class="contact-list">
+                    <li><strong>E-mail</strong><a href="mailto:contact@conciergerie-sportive.fr">contact@conciergerie-sportive.fr</a></li>
+                    <li><strong>Réponse</strong><span>Sous 48 h ouvrées</span></li>
+                </ul>
+            </div>
+            <form class="contact-form" id="contact-form" novalidate>
+                <div class="field">
+                    <label for="club">Nom du club</label>
+                    <input type="text" id="club" name="club" autocomplete="organization" required>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="name">Votre nom</label>
+                        <input type="text" id="name" name="name" autocomplete="name" required>
+                    </div>
+                    <div class="field">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" name="email" autocomplete="email" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="plan">Formule qui vous intéresse</label>
+                    <select id="plan" name="plan">
+                        <option value="Je ne sais pas encore">Je ne sais pas encore</option>
+                        <option value="Basique">Basique — 50 €/mois</option>
+                        <option value="Pro">Pro — 100 €/mois</option>
+                        <option value="Premium">Premium — 200 €/mois</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="message">Votre message</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-block">Envoyer ma demande</button>
+                <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+            </form>
+        </div>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <a href="#top" class="logo">
+            <span class="logo-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32"><path d="M9 17l5 5 9-12"/></svg>
+            </span>
+            <span class="logo-text">Conciergerie <strong>Sportive</strong></span>
+        </a>
+        <nav class="footer-nav" aria-label="Pied de page">
+            <a href="#services">Services</a>
+            <a href="#methode">Méthode</a>
+            <a href="#tarifs">Tarifs</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Contact</a>
+        </nav>
+        <p class="copyright">&copy; <span id="year">2026</span> Conciergerie Sportive. Tous droits réservés.</p>
     </div>
-</section>
-
-<section id="tarifs">
-    <h2>Nos Tarifs</h2>
-    <div class="pricing">
-        <div class="plan">
-            <h3>Basique</h3>
-            <p>Site web + support technique</p>
-            <p>€50/mois</p>
-        </div>
-        <div class="plan">
-            <h3>Pro</h3>
-            <p>Site web + maintenance + cybersécurité</p>
-            <p>€100/mois</p>
-        </div>
-        <div class="plan">
-            <h3>Premium</h3>
-            <p>Tout inclus + gestion digitale complète</p>
-            <p>€200/mois</p>
-        </div>
-    </div>
-</section>
-
-<section id="contact">
-    <h2>Contactez-nous</h2>
-    <form>
-        <input type="text" placeholder="Nom du club" required>
-        <input type="email" placeholder="Email" required>
-        <textarea placeholder="Votre message" rows="5" required></textarea>
-        <button type="submit">Envoyer</button>
-    </form>
-</section>
-
-<footer>
-    <p>&copy; 2025 Conciergerie Sportive. Tous droits réservés.</p>
 </footer>
 
+<script src="script.js"></script>
 </body>
 </html>

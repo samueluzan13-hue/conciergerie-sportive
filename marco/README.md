@@ -19,9 +19,11 @@ L'utilisateur dit ce qu'il veut faire, Marco construit le plan.
 | **Base de données** (`/base`, éditeurs) | Ajouter / modifier / supprimer lieux et rues, traiter les propositions |
 | **Proposer une pépite** | Les utilisateurs envoient une adresse, elle arrive dans les propositions |
 | **Sortir ce soir** (`/soirees`) | L'ambiance nocturne et les lieux de chaque arrondissement (1er → 20e), liens programme et itinéraire |
-| **Casher & halal** | Filtres dans Explorer + quartiers où chercher, avec rappel de vérifier la certification sur place |
+| **Activités** | 40 activités réservables : bateau, piscines Art déco, ateliers et dégustations, sport, visites insolites, musées de niche, sorties en famille |
+| **Réservation** | Bouton « Réserver une table » sur tous les restaurants, « Réserver l'activité » sur toutes les activités |
+| **Casher & halal** | Uniquement sur demande dans le chat : quartiers où chercher et adresses, avec rappel de vérifier la certification |
 
-Données : `src/data/spots.ts` + `src/data/spots-extra.ts` (89 adresses, du très connu au très caché), `src/data/guides.ts` (soirées par arrondissement, quartiers casher / halal) et `src/data/streets.ts` (28 rues). Pour en ajouter, il suffit de compléter ces fichiers.
+Données : `src/data/spots.ts` + `src/data/spots-extra.ts` + `spots-restos.ts` + `spots-activites.ts` (196 lieux : 88 restaurants, 40 activités, bars, cafés, culture, nature, insolite), `src/data/guides.ts` (soirées par arrondissement, quartiers casher / halal) et `src/data/streets.ts` (28 rues). Pour en ajouter, il suffit de compléter ces fichiers.
 
 ## Annuaire des voies de Paris
 

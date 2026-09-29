@@ -53,7 +53,7 @@ const PARKS: { lat: number; lng: number; r: number }[] = [
 
 export const CAT_COLOR: Record<Spot["category"], string> = {
   resto: "var(--c-resto)", bar: "var(--c-bar)", cafe: "var(--c-cafe)",
-  culture: "var(--c-culture)", nature: "var(--c-nature)", insolite: "var(--c-insolite)",
+  culture: "var(--c-culture)", nature: "var(--c-nature)", insolite: "var(--c-insolite)", activite: "var(--c-activite)",
 };
 
 interface Props {

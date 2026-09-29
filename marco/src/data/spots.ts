@@ -1,6 +1,7 @@
 import { EXTRA_SPOTS } from "./spots-extra";
 import { RESTO_SPOTS } from "./spots-restos";
-export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite";
+import { ACTIVITY_SPOTS } from "./spots-activites";
+export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite" | "activite";
 
 export type Diet = "casher" | "halal";
 
@@ -35,6 +36,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   culture: "Culture",
   nature: "Nature",
   insolite: "Insolite",
+  activite: "Activités",
 };
 
 export const MOOD_LABEL: Record<Mood, string> = {
@@ -506,7 +508,18 @@ const BASE_SPOTS: Spot[] = [
   },
 ];
 
-export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS];
+export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS];
+
+/** Type de réservation proposé : tous les restos se réservent (table), toutes les activités aussi. */
+export function bookingKind(s: Spot): "table" | "activite" | undefined {
+  if (s.bookable) return s.bookable;
+  if (s.category === "resto") return "table";
+  if (s.category === "activite") return "activite";
+  return undefined;
+}
+
+/** Vrai si le lieu est connu pour ne pas prendre de réservation (on le dit honnêtement). */
+export const usuallyNoBooking = (s: Spot) => /(pas de r[ée]servation|sans r[ée]servation)/i.test(`${s.tip} ${s.pitch}`);
 
 export const DIET_LABEL: Record<Diet, string> = { casher: "Casher", halal: "Halal" };
 

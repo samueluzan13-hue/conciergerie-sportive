@@ -20,6 +20,7 @@
   --c-culture: #b0402f;
   --c-nature: #5e8a4c;
   --c-insolite: #2f6f6a;
+  --c-activite: #3d5a98;
   --map-out: #efe4d4;
   --map-land: #fbf6ee;
   --map-road: #eadbc6;
@@ -484,3 +485,4 @@ button.marco-card { text-align: left; width: 100%; }
 .chip-select { appearance: none; -webkit-appearance: none; padding-right: 15px; }
 .zone-card { background: var(--paper); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
 .diet-zones { display: flex; flex-direction: column; gap: 8px; }
+.chip.dot-activite::before { background: var(--c-activite); }

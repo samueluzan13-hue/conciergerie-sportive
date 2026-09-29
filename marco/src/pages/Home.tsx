@@ -26,6 +26,8 @@ const ACTIONS = [
   { to: "/rues", icon: "book", title: "Une rue", sub: "Son histoire, ses potins" },
   { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: "La nuit, arrondissement par arrondissement" },
   { to: "/explorer?cat=resto", icon: "heart", title: "Où manger", sub: "Des restos dans tout Paris" },
+  { to: "/explorer?cat=activite", icon: "sparkles", title: "Activités", sub: "Ateliers, bateau, sport, insolite" },
+  { to: "/carte", icon: "pin", title: "Autour de moi", sub: "Les pépites du quartier" },
 ];
 
 function greeting() {

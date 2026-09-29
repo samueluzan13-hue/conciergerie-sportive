@@ -4,7 +4,7 @@ import { distanceKm, formatTime, travel } from "./geo";
 export type Who = "solo" | "date" | "amis" | "famille";
 export type Duration = "3h" | "journee" | "soiree";
 export type Budget = 1 | 2 | 3;
-export type Envie = "manger" | "culture" | "verre" | "nature" | "insolite" | "cafe";
+export type Envie = "manger" | "culture" | "verre" | "nature" | "insolite" | "cafe" | "activite";
 
 export interface PlanInput {
   who: Who;
@@ -37,6 +37,7 @@ const ENVIE_CATS: Record<Envie, Category[]> = {
   nature: ["nature"],
   insolite: ["insolite"],
   cafe: ["cafe"],
+  activite: ["activite"],
 };
 
 /** Squelette de la journée : une suite de "créneaux" de catégories. */
@@ -45,6 +46,7 @@ function skeleton(input: PlanInput): { cats: Category[]; startMin: number }[] {
   const day: Category[][] = [];
   if (input.duration === "3h") {
     if (wants("cafe")) day.push(["cafe"]);
+    if (wants("activite")) day.push(["activite"]);
     if (wants("culture") || wants("insolite")) day.push(["culture", "insolite"]);
     if (wants("nature")) day.push(["nature"]);
     if (wants("verre")) day.push(["bar"]);
@@ -63,6 +65,7 @@ function skeleton(input: PlanInput): { cats: Category[]; startMin: number }[] {
   day.push(wants("culture") ? ["culture"] : ["insolite", "nature"]);
   day.push(["resto"]);
   if (wants("insolite")) day.push(["insolite"]);
+  if (wants("activite") || input.who === "famille") day.push(["activite"]);
   if (wants("nature") || input.who === "famille") day.push(["nature"]);
   if (wants("culture") && input.envies.length > 1) day.push(["culture"]);
   if (input.who !== "famille") day.push(["bar"]);

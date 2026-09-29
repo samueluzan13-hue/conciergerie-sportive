@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { CATEGORY_LABEL, MOOD_LABEL, spotById, type Spot } from "../data/spots";
+import { bookingKind, CATEGORY_LABEL, MOOD_LABEL, spotById, usuallyNoBooking, type Spot } from "../data/spots";
 import { pushHistory } from "../lib/store";
 import { Icon } from "./Icon";
 import { SpotArt } from "./SpotArt";
@@ -10,7 +10,7 @@ const Ctx = createContext<(id: string) => void>(() => {});
 export const useSpotSheet = () => useContext(Ctx);
 
 export function bookingUrl(spot: Spot) {
-  if (spot.bookable === "table") return `https://www.thefork.fr/search?queryText=${encodeURIComponent(spot.name + " Paris")}`;
+  if (bookingKind(spot) === "table") return `https://www.thefork.fr/search?queryText=${encodeURIComponent(spot.name + " Paris")}`;
   return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(spot.name + " Paris")}`;
 }
 
@@ -21,6 +21,7 @@ export function directionsUrl(spot: Spot) {
 export function SpotSheetProvider({ children }: { children: ReactNode }) {
   const [id, setId] = useState<string | null>(null);
   const spot = id ? spotById(id) : undefined;
+  const book = spot ? bookingKind(spot) : undefined;
 
   useEffect(() => {
     if (!id) return;
@@ -63,17 +64,23 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               {spot.tip}
             </div>
             <div className="sheet-actions">
-              {spot.bookable ? (
+              {book ? (
                 <a className="btn btn-primary" href={bookingUrl(spot)} target="_blank" rel="noreferrer">
                   <Icon name="calendar" size={18} />
-                  {spot.bookable === "table" ? "Réserver une table" : "Réserver l'activité"}
+                  {book === "table" ? "Réserver une table" : "Réserver l'activité"}
                 </a>
               ) : null}
-              <a className={`btn ${spot.bookable ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
+              <a className={`btn ${book ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
                 <Icon name="pin" size={18} /> Y aller
               </a>
             </div>
-            {spot.bookable && <p className="muted tiny center">Réservation chez nos partenaires, sans surcoût pour toi.</p>}
+            {book && (
+              <p className="muted tiny center">
+                {usuallyNoBooking(spot)
+                  ? "Ce lieu fonctionne souvent sans réservation : la page du partenaire t'indiquera s'il accepte les réservations, sinon viens directement."
+                  : "Réservation chez nos partenaires, sans surcoût pour toi."}
+              </p>
+            )}
           </div>
         </div>
       )}

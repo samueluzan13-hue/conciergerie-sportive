@@ -7,6 +7,7 @@ const THEMES: Record<Spot["category"], [string, string, string]> = {
   culture: ["#8A3434", "#C9663F", "#F6D3B3"],
   nature: ["#6F8F5B", "#AFC27E", "#F2F0D0"],
   insolite: ["#2F5D62", "#6FA08F", "#DCEFE4"],
+  activite: ["#3D5A98", "#7E9BD6", "#E3ECFF"],
 };
 
 const EMBLEM: Record<Spot["category"], string> = {
@@ -16,6 +17,7 @@ const EMBLEM: Record<Spot["category"], string> = {
   culture: "M30 46l20-12 20 12zM34 48v18M44 48v18M56 48v18M66 48v18M28 70h44",
   nature: "M50 70V46M50 52c-10 0-16-7-16-16 10 0 16 7 16 16zM50 58c10 0 16-7 16-16-10 0-16 7-16 16z",
   insolite: "M50 32l4 12h12l-10 7 4 12-10-7-10 7 4-12-10-7h12z",
+  activite: "M38 58l12-26 12 26M42 50h16M34 66c5 4 11 4 16 0s11-4 16 0",
 };
 
 /** Illustration générée pour chaque lieu (pas de dépendance à des photos externes). */

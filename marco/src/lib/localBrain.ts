@@ -121,7 +121,14 @@ export function localReply(input: string): string {
     return `${arr ? "" : "Les arrondissements où ça bouge le plus :\n\n"}${guides.map(fmt).join("\n\n")}\n\n_${NIGHT_NOTE}_\n\n[[go:/soirees|Voir les soirées des 20 arrondissements]]`;
   }
 
-  // 6. Recherches par envie
+  // 6. Activités
+  if (has(t, ["activite", "atelier", "cours de", "faire quoi", "quoi faire", "sport", "piscine", "nager", "bateau", "croisiere", "visite", "musee insolite", "enfant", "pluie", "il pleut", "jeu", "bowling", "danser le", "degustation", "insolite a faire", "occuper"]) && !has(t, ["manger", "resto", "diner", "dejeuner"])) {
+    const kids = has(t, ["enfant", "famille", "kids"]);
+    const spots = pick((s) => s.category === "activite" && (!kids || s.moods.includes("famille")), t, 4);
+    return `${kids ? "Des activités qui plaisent aux petits comme aux grands" : "Des idées d'activités, du classique au très confidentiel"} :\n\n${list(spots)}\n\nAppuie sur une activité pour **la réserver**.\n\n[[go:/explorer?cat=activite|Voir toutes les activités]]`;
+  }
+
+  // 7. Recherches par envie
   const romantic = has(t, ["date", "romant", "amoureu", "couple"]);
   if (has(t, ["jazz", "musique", "concert", "danser", "swing"])) return `Ça swingue par ici :\n\n${list(pick((s) => s.moods.includes("jazz"), t))}`;
   if (has(t, ["verre", "bar", "cocktail", "apero", "boire", "vin"])) {

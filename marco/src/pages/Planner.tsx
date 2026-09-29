@@ -4,7 +4,7 @@ import { Icon } from "../components/Icon";
 import { MarcoLogo } from "../components/MarcoLogo";
 import { SpotArt } from "../components/SpotArt";
 import { bookingUrl, useSpotSheet } from "../components/SpotSheet";
-import { CATEGORY_LABEL, QUARTIERS } from "../data/spots";
+import { bookingKind, CATEGORY_LABEL, QUARTIERS } from "../data/spots";
 import { generatePlan, type Budget, type Duration, type Envie, type Plan, type PlanInput, type Who } from "../lib/planner";
 import { savePlan, useStore } from "../lib/store";
 
@@ -26,6 +26,7 @@ const ENVIES: { v: Envie; label: string }[] = [
   { v: "insolite", label: "Insolite" },
   { v: "nature", label: "Prendre l'air" },
   { v: "cafe", label: "Café & douceurs" },
+  { v: "activite", label: "Une activité" },
 ];
 
 const STEPS = ["Qui ?", "Combien de temps ?", "Tes envies", "Ton budget", "On part d'où ?"];
@@ -90,9 +91,9 @@ export function Planner() {
                     <span className="tiny eyebrow">{CATEGORY_LABEL[s.spot.category]} · {s.spot.quartier}</span>
                     <h3>{s.spot.name}</h3>
                     <p className="small muted">{s.why}</p>
-                    {s.spot.bookable && (
+                    {bookingKind(s.spot) && (
                       <a className="book-link" href={bookingUrl(s.spot)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                        <Icon name="calendar" size={14} /> {s.spot.bookable === "table" ? "Réserver une table" : "Réserver"}
+                        <Icon name="calendar" size={14} /> {bookingKind(s.spot) === "table" ? "Réserver une table" : "Réserver"}
                       </a>
                     )}
                   </div>

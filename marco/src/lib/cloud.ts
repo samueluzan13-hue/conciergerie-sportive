@@ -76,7 +76,7 @@ export function useCloud() {
 let dbRef: Db | null = null;
 
 /* ---------- Validation (les données partagées ne sont jamais fiables) ---------- */
-const CATS: Category[] = ["resto", "bar", "cafe", "culture", "nature", "insolite"];
+const CATS: Category[] = ["resto", "bar", "cafe", "culture", "nature", "insolite", "activite"];
 const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
 const num = (v: unknown, d = 0) => (typeof v === "number" && isFinite(v) ? v : d);
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, Math.round(n)));

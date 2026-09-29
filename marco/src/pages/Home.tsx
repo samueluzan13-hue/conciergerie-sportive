@@ -25,7 +25,7 @@ const ACTIONS = [
   { to: "/planner", icon: "calendar", title: "Planifier", sub: "Ma journée sur-mesure" },
   { to: "/rues", icon: "book", title: "Une rue", sub: "Son histoire, ses potins" },
   { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: "La nuit, arrondissement par arrondissement" },
-  { to: "/explorer?diet=casher", icon: "heart", title: "Casher & halal", sub: "Les bonnes adresses par quartier" },
+  { to: "/explorer?cat=resto", icon: "heart", title: "Où manger", sub: "Des restos dans tout Paris" },
 ];
 
 function greeting() {

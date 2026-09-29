@@ -1,4 +1,5 @@
 import { EXTRA_SPOTS } from "./spots-extra";
+import { RESTO_SPOTS } from "./spots-restos";
 export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite";
 
 export type Diet = "casher" | "halal";
@@ -505,7 +506,7 @@ const BASE_SPOTS: Spot[] = [
   },
 ];
 
-export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS];
+export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS];
 
 export const DIET_LABEL: Record<Diet, string> = { casher: "Casher", halal: "Halal" };
 

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { BrowserRouter, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect, type ReactNode } from "react";
+import { BrowserRouter, MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { BottomNav } from "./components/BottomNav";
 import { MarcoLogo } from "./components/MarcoLogo";
 import { SpotSheetProvider } from "./components/SpotSheet";
@@ -22,6 +23,12 @@ function ScrollTop() {
   const { pathname } = useLocation();
   useEffect(() => document.querySelector(".content")?.scrollTo(0, 0), [pathname]);
   return null;
+}
+
+function SafeScreens({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname} onReset={() => navigate("/")}>{children}</ErrorBoundary>;
 }
 
 function DesktopAside() {
@@ -57,6 +64,7 @@ export default function App() {
             {onboarded ? (
               <>
                 <main className="content" key={version}>
+                  <SafeScreens>
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/explorer" element={<Explorer />} />
@@ -70,6 +78,7 @@ export default function App() {
                     <Route path="/base" element={<Admin />} />
                     <Route path="*" element={<Home />} />
                   </Routes>
+                  </SafeScreens>
                 </main>
                 <BottomNav />
               </>

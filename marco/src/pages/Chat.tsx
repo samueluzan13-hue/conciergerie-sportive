@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { Markdown } from "../components/Markdown";
 import { MarcoLogo } from "../components/MarcoLogo";

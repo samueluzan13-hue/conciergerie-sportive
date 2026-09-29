@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { SpotCard } from "../components/SpotCard";
-import { Link } from "react-router-dom";
+import { Link } from "../components/Nav";
 import { useCloud } from "../lib/cloud";
 import { CATEGORY_LABEL, MOOD_LABEL, SPOTS, type Category, type Mood } from "../data/spots";
 

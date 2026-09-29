@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink } from "./Nav";
 import { Icon } from "./Icon";
 import { MarcoLogo } from "./MarcoLogo";
 

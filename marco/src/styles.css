@@ -530,3 +530,7 @@ button.marco-card { text-align: left; width: 100%; }
 .status { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: var(--orange-soft); color: #b44a0c; }
 .status-confirmee { background: #e2f2e7; color: var(--green); }
 .status-impossible { background: #f6e0da; color: #b3412a; }
+.booking-card.calling { border-color: var(--orange); background: var(--orange-soft); }
+.booking-card.calling .booking-title svg { animation: blink 1.2s infinite; }
+.booking-card.failed { border-color: #b3412a; }
+.booking-card.failed .booking-title { color: #b3412a; }

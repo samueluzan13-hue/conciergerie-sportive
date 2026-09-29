@@ -5,6 +5,7 @@ import { SpotCard, SpotRow } from "../components/SpotCard";
 import { MOOD_LABEL, QUARTIERS, spotById, type Mood } from "../data/spots";
 import { STREETS } from "../data/streets";
 import { useCloud, watchBooking } from "../lib/cloud";
+import { applyCall, getCall } from "../lib/voice";
 import { forget, setState, updateBooking, updateProfile, useStore } from "../lib/store";
 
 export function Profile() {
@@ -12,11 +13,19 @@ export function Profile() {
   const cloud = useCloud();
   const memory = useStore((s) => s.memory ?? []);
   const bookings = useStore((s) => s.bookings ?? []);
-  const bookingIds = bookings.map((b) => b.id).join(",");
+  const bookingIds = bookings.map((b) => b.id + b.status).join(",");
   // suivi en direct : l'équipe Marco confirme (ou non) dans la base
   useEffect(() => {
-    const offs = bookings.map((b) => watchBooking(b.id, (x) => x && updateBooking(b.id, { status: x.status, reponse: x.reponse || undefined })));
-    return () => offs.forEach((off) => off());
+    const offs = bookings.filter((b) => !b.callId).map((b) => watchBooking(b.id, (x) => x && updateBooking(b.id, { status: x.status, reponse: x.reponse || undefined })));
+    // appels de l'agent vocal encore en cours : on relève le résultat
+    const calling = bookings.filter((b) => b.callId && b.status === "en_attente");
+    const poll = () => calling.forEach((b) => getCall(b.callId!).then((r) => r && applyCall(b, r)));
+    if (calling.length) poll();
+    const timer = calling.length ? setInterval(poll, 10000) : undefined;
+    return () => {
+      offs.forEach((off) => off());
+      clearInterval(timer);
+    };
   }, [bookingIds, cloud.db]); // eslint-disable-line react-hooks/exhaustive-deps
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);

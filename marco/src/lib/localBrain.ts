@@ -142,7 +142,12 @@ export function localReply(input: string): string {
 
   // 3. Réservation / voyage
   if (has(t, ["reserv", "book", "hotel", "vol ", "voyage", "sejour", "vacances"])) {
-    return `Sur chaque fiche, le bouton **Réserver** t'envoie chez nos partenaires (table ou activité), sans surcoût pour toi.\n\nEt bientôt, tu pourras réserver **tout ton voyage** directement dans Marco : hébergement, activités, restos, le tout dans un seul plan. Inscris-toi sur la page **Voyages** pour être prévenu${name ? "," + name : ""}.`;
+    // une réservation se fait avec l'IA (elle prépare la carte de réservation) : réponse locale seulement en secours
+    strong = false;
+    if (has(t, ["reserv", "book"]) && !has(t, ["hotel", "vol ", "voyage", "sejour", "vacances"])) {
+      return `Dis-moi **le restaurant ou l'activité, le jour, l'heure et combien vous êtes**, et je m'en occupe${name ? "," + name : ""}.\n\nTu peux aussi ouvrir la fiche d'un lieu : le bouton **Réserver** t'emmène directement sur son site officiel.`;
+    }
+    return `Bientôt, tu pourras réserver **tout ton voyage** dans Marco : hébergement, activités, restos, le tout dans un seul plan. Inscris-toi sur la page **Voyages** pour être prévenu${name ? "," + name : ""}.\n\nPour une table ou une activité, c'est déjà possible : dis-moi où, quand et combien vous êtes.`;
   }
 
   // 4. Casher / halal

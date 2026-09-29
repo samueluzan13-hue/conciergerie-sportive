@@ -33,6 +33,15 @@ Données : `src/data/spots.ts` + `src/data/spots-extra.ts` + `spots-restos.ts` +
 1. `scripts/voies-initiales.txt` : première liste saisie à la main (≈1 300 voies) ;
 2. `scripts/voies-officielles.json` (optionnel) : l'export JSON du jeu de données officiel **« Dénominations des emprises des voies actuelles »** d'opendata.paris.fr, qui apporte **toutes** les voies avec l'origine du nom et l'historique. Déposer le fichier puis relancer le script.
 
+## Réservation par Marco (agent vocal)
+
+Quand l'utilisateur demande à réserver, l'IA prépare une **carte de réservation** dans le chat (lieu, jour, heure, personnes). L'utilisateur ajoute son nom et son téléphone, confirme, et :
+
+- **Sur le site en ligne, avec l'agent vocal configuré** : `server/voice.ts` (route `/api/appel`) fait appeler le restaurant par un assistant vocal [Vapi](https://vapi.ai) propulsé par Claude. Le numéro vient toujours de la fiche Google du restaurant (jamais d'un numéro saisi), uniquement des numéros français non surtaxés, entre 10 h et 22 h (sinon l'appel est programmé au lendemain 10 h). L'agent se présente comme assistant vocal, ne donne jamais de carte bancaire, n'accepte un autre horaire qu'à 30 min près. À la fin, Vapi analyse l'appel (confirmée, autre horaire, complet, pas de réponse, à rappeler) et l'app affiche le résultat en direct, puis dans **Profil › Mes réservations**.
+- **Dans l'aperçu claude.ai** : la demande part dans la collection `reservations` et l'équipe la traite depuis **Base de données › Réservations**.
+
+Mise en route de l'agent vocal : compte Vapi, numéro français importé (Twilio, Vonage ou Telnyx), puis `VAPI_API_KEY`, `VAPI_PHONE_NUMBER_ID`, `GOOGLE_MAPS_API_KEY` et `MARCO_AUTO_CALL=1` (voir `.env.example`). Sans `MARCO_AUTO_CALL`, seuls les appels portant l'en-tête `x-marco-admin: $MARCO_ADMIN_TOKEN` sont acceptés. Avant l'ouverture au grand public : comptes utilisateurs et limiteur d'appels partagé (le garde-fou actuel est par instance du serveur).
+
 ## Base de données
 
 - **Aperçu claude.ai** : la page utilise la base intégrée (`src/lib/cloud.ts`) : collections `lieux`, `rues`, `suggestions`, `recits` (histoires de rues écrites une fois par l'IA puis partagées), et un document privé par utilisateur (`data/users/<id>/etat` : profil, favoris, plans, historique). Seuls les éditeurs modifient `lieux` et `rues`.

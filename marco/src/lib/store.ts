@@ -25,6 +25,8 @@ export interface MyBooking {
   people: number;
   status: "en_attente" | "confirmee" | "impossible";
   reponse?: string;
+  /** appel passé par l'agent vocal de Marco */
+  callId?: string;
 }
 
 interface State {

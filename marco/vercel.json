@@ -8,6 +8,9 @@
   "functions": {
     "api/marco.ts": {
       "maxDuration": 120
+    },
+    "api/appel.ts": {
+      "maxDuration": 30
     }
   }
 }

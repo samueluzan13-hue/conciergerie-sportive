@@ -1,0 +1,14 @@
+{
+  "name": "Marco — ton pote qui a tout fait",
+  "short_name": "Marco",
+  "description": "Adresses cachées, histoire des rues et plans sur-mesure à Paris.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF5EC",
+  "theme_color": "#FBF5EC",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

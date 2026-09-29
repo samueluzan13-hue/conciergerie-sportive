@@ -140,12 +140,13 @@ export function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onFocus={() => document.body.classList.add("typing")}
-          onBlur={() => document.body.classList.remove("typing")}
+          // on attend un peu : sinon la barre bouge pendant l'appui sur « Envoyer » et le clic tombe à côté
+          onBlur={() => setTimeout(() => document.activeElement?.id !== "chat-message" && document.body.classList.remove("typing"), 250)}
           placeholder="Écris à Marco…"
           aria-label="Message"
           enterKeyHint="send"
         />
-        <button className="btn-round" disabled={!input.trim() || busy} aria-label="Envoyer"><Icon name="send" size={18} /></button>
+        <button className="btn-round" disabled={!input.trim() || busy} aria-label="Envoyer" onPointerDown={(e) => e.preventDefault()}><Icon name="send" size={18} /></button>
       </form>
     </div>
   );

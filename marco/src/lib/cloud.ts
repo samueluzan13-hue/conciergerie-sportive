@@ -120,7 +120,12 @@ export function toStreet(id: string, d: Record<string, unknown>): StreetStory | 
   };
 }
 
-const replace = <T,>(arr: T[], items: T[]) => arr.splice(0, arr.length, ...items);
+/** Remplace le contenu d'une liste ; renvoie false si rien n'a changé (évite de redessiner l'app pour rien). */
+const replace = <T,>(arr: T[], items: T[]) => {
+  if (JSON.stringify(arr) === JSON.stringify(items)) return false;
+  arr.splice(0, arr.length, ...items);
+  return true;
+};
 
 /* ---------- Démarrage ---------- */
 let started = false;
@@ -139,17 +144,11 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
 
   db.collection("lieux").onSnapshot((snap) => {
     const items = snap.docs.map((d) => toSpot(d.id, d.data() ?? {})).filter((x): x is Spot => !!x);
-    if (items.length) {
-      replace(SPOTS, items);
-      emit({ fromDb: true, version: cloud.version + 1 });
-    }
+    if (items.length && replace(SPOTS, items)) emit({ fromDb: true, version: cloud.version + 1 });
   });
   db.collection("rues").onSnapshot((snap) => {
     const items = snap.docs.map((d) => toStreet(d.id, d.data() ?? {})).filter((x): x is StreetStory => !!x);
-    if (items.length) {
-      replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")));
-      emit({ fromDb: true, version: cloud.version + 1 });
-    }
+    if (items.length && replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")))) emit({ fromDb: true, version: cloud.version + 1 });
   });
   if (isAdmin) {
     db.collection("suggestions").onSnapshot((snap) => {

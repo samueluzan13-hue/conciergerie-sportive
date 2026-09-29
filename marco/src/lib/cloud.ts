@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { SPOTS, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
+import { WEBSITES } from "../data/websites";
 import { log, setDiagSink } from "./diag";
 
 /* ---------- Types minimaux des capacités (voir la doc du runtime) ---------- */
@@ -105,6 +106,7 @@ export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
     diet: Array.isArray(d.diet) ? (d.diet.filter((x) => x === "casher" || x === "halal") as Spot["diet"]) : undefined,
     photo: typeof d.photo === "string" && (/^[0-9a-f]{32}$/.test(d.photo) || /^https:\/\//.test(d.photo)) ? d.photo : undefined,
     photoCredit: str(d.photoCredit, 120) || undefined,
+    website: (typeof d.website === "string" && /^https:\/\/[^\s]+$/.test(d.website) ? d.website.slice(0, 300) : "") || WEBSITES[id],
   };
 }
 

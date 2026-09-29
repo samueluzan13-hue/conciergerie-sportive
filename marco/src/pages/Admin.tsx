@@ -65,6 +65,7 @@ function SpotForm({ initial, onDone }: { initial: Spot; onDone: () => void }) {
         </Field>
         <Field label="Arrondissement"><input id="s-arr" className="input" type="number" min={1} max={20} value={s.arrondissement} onChange={(e) => set("arrondissement", Number(e.target.value))} /></Field>
       </div>
+      <Field label="Site officiel (réservation directe)"><input id="s-website" className="input" type="url" inputMode="url" value={s.website ?? ""} onChange={(e) => set("website", e.target.value.trim() || undefined)} placeholder="https://…" /></Field>
       <Field label="Adresse"><input id="s-address" className="input" value={s.address} onChange={(e) => set("address", e.target.value)} placeholder="12 rue …, 75011" /></Field>
       <Field label="Quartier (place le point sur la carte)">
         <select

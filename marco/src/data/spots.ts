@@ -1,6 +1,7 @@
 import { EXTRA_SPOTS } from "./spots-extra";
 import { RESTO_SPOTS } from "./spots-restos";
 import { ACTIVITY_SPOTS } from "./spots-activites";
+import { WEBSITES } from "./websites";
 export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite" | "activite";
 
 export type Diet = "casher" | "halal";
@@ -31,6 +32,8 @@ export interface Spot {
   photo?: string;
   /** crédit de la photo (auteur / source) */
   photoCredit?: string;
+  /** site officiel (réservation directe) */
+  website?: string;
 }
 
 export const CATEGORY_LABEL: Record<Category, string> = {
@@ -513,6 +516,7 @@ const BASE_SPOTS: Spot[] = [
 ];
 
 export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS];
+for (const s of SPOTS) s.website ??= WEBSITES[s.id];
 
 /** Type de réservation proposé : tous les restos se réservent (table), toutes les activités aussi. */
 export function bookingKind(s: Spot): "table" | "activite" | undefined {

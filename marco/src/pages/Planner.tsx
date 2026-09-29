@@ -93,7 +93,7 @@ export function Planner() {
                     <p className="small muted">{s.why}</p>
                     {bookingKind(s.spot) && (
                       <a className="book-link" href={bookingUrl(s.spot)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                        <Icon name="calendar" size={14} /> {bookingKind(s.spot) === "table" ? "Réserver une table" : "Réserver"}
+                        <Icon name="calendar" size={14} /> {bookingKind(s.spot) === "table" ? "Réserver au restaurant" : "Réserver"}
                       </a>
                     )}
                   </div>

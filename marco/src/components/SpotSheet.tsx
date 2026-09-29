@@ -3,6 +3,7 @@ import type { Spot as SpotT } from "../data/spots";
 import { bookingKind, CATEGORY_LABEL, MOOD_LABEL, spotById, usuallyNoBooking, type Spot } from "../data/spots";
 import { pushHistory } from "../lib/store";
 import { Icon } from "./Icon";
+import { reserveUrl, siteLabel } from "../lib/reservation";
 import { SpotPhoto } from "./SpotPhoto";
 import { getAssets, setSpotPhoto } from "../lib/cloud";
 import { HiddenBadge, Price, SaveButton } from "./SpotCard";
@@ -11,10 +12,8 @@ const Ctx = createContext<(id: string) => void>(() => {});
 
 export const useSpotSheet = () => useContext(Ctx);
 
-export function bookingUrl(spot: Spot) {
-  if (bookingKind(spot) === "table") return `https://www.thefork.fr/search?queryText=${encodeURIComponent(spot.name + " Paris")}`;
-  return `https://www.getyourguide.fr/s/?q=${encodeURIComponent(spot.name + " Paris")}`;
-}
+/** Réservation directe sur le site officiel du lieu. */
+export const bookingUrl = (spot: Spot) => reserveUrl(spot);
 
 export function directionsUrl(spot: Spot) {
   return `https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`;
@@ -114,7 +113,7 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               {book ? (
                 <a className="btn btn-primary" href={bookingUrl(spot)} target="_blank" rel="noreferrer">
                   <Icon name="calendar" size={18} />
-                  {book === "table" ? "Réserver une table" : "Réserver l'activité"}
+                  {book === "table" ? "Réserver au restaurant" : "Réserver sur le site officiel"}
                 </a>
               ) : null}
               <a className={`btn ${book ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
@@ -124,8 +123,10 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
             {book && (
               <p className="muted tiny center">
                 {usuallyNoBooking(spot)
-                  ? "Ce lieu fonctionne souvent sans réservation : la page du partenaire t'indiquera s'il accepte les réservations, sinon viens directement."
-                  : "Réservation chez nos partenaires, sans surcoût pour toi."}
+                  ? "Ce lieu fonctionne souvent sans réservation : son site te le confirmera, sinon viens directement."
+                  : spot.website
+                    ? `Tu réserves directement auprès du lieu, sur ${siteLabel(spot.website)}.`
+                    : "Marco t'emmène sur le site officiel du lieu : vérifie que c'est bien le bon avant de réserver."}
               </p>
             )}
           </div>

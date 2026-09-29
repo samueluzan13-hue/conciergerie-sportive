@@ -1,12 +1,19 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { handleMarco } from "./server/marco";
+import { handlePhoto } from "./server/photo";
 
 // En dev, expose /api/marco (même logique que la fonction serverless api/marco.ts).
 function marcoApi(): Plugin {
   return {
     name: "marco-api",
     configureServer(server) {
+      server.middlewares.use("/api/photo", async (req, res) => {
+        const { status, headers, body } = await handlePhoto(new URL(req.url ?? "/", "http://localhost").searchParams);
+        res.statusCode = status;
+        for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+        res.end(body);
+      });
       server.middlewares.use("/api/marco", async (req, res) => {
         let raw = "";
         for await (const chunk of req) raw += chunk;

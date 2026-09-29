@@ -486,3 +486,10 @@ button.marco-card { text-align: left; width: 100%; }
 .zone-card { background: var(--paper); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
 .diet-zones { display: flex; flex-direction: column; gap: 8px; }
 .chip.dot-activite::before { background: var(--c-activite); }
+
+/* Photos des lieux */
+.spot-photo { position: relative; width: 100%; overflow: hidden; background: var(--sand); }
+.spot-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-credit { position: absolute; right: 8px; bottom: 6px; font-size: 10px; color: #fff; background: rgba(0,0,0,.45); padding: 2px 7px; border-radius: 999px; }
+.photo-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 16px; border: 1.5px dashed #e3cdb4; }
+.photo-edit input[type="file"] { font-size: 13px; }

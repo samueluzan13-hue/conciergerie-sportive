@@ -27,6 +27,10 @@ export interface Spot {
   bookable?: "table" | "activite";
   /** cuisine casher / halal (certification à vérifier sur place) */
   diet?: Diet[];
+  /** photo : identifiant d'image hébergée dans l'app (32 caractères) ou adresse https */
+  photo?: string;
+  /** crédit de la photo (auteur / source) */
+  photoCredit?: string;
 }
 
 export const CATEGORY_LABEL: Record<Category, string> = {

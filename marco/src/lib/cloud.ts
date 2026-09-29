@@ -12,6 +12,7 @@ interface QuerySnap { docs: DocSnap[] }
 interface DocRef {
   get(): Promise<DocSnap>;
   set(d: Record<string, unknown>): Promise<void>;
+  update(d: Record<string, unknown>): Promise<void>;
   delete(): Promise<void>;
   onSnapshot(next: (s: DocSnap) => void, err?: (e: { code: string }) => void): () => void;
 }
@@ -102,6 +103,8 @@ export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
     duration: clamp(num(d.duration, 60), 10, 300),
     bookable: d.bookable === "table" || d.bookable === "activite" ? d.bookable : undefined,
     diet: Array.isArray(d.diet) ? (d.diet.filter((x) => x === "casher" || x === "halal") as Spot["diet"]) : undefined,
+    photo: typeof d.photo === "string" && (/^[0-9a-f]{32}$/.test(d.photo) || /^https:\/\//.test(d.photo)) ? d.photo : undefined,
+    photoCredit: str(d.photoCredit, 120) || undefined,
   };
 }
 
@@ -255,6 +258,42 @@ export async function saveRecit(name: string, text: string) {
   } catch {
     /* écriture refusée (droits) : pas grave, le récit reste affiché */
   }
+}
+
+/* ---------- Photos des lieux (stockées dans l'app, ajoutées par les éditeurs) ---------- */
+interface Assets { upload(blob: Blob, options?: { type?: string }): Promise<{ id: string; url: string }> }
+export const getAssets = () => use<Assets>("assets");
+
+/** Réduit une image (max 1400 px, JPEG) pour qu'elle reste légère sur mobile. */
+async function shrink(file: File): Promise<Blob> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.82));
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
+/** Téléverse une photo et l'associe au lieu. Renvoie l'identifiant de la photo. */
+export async function setSpotPhoto(spotId: string, file: File, credit: string) {
+  const assets = await getAssets();
+  if (!assets || !dbRef) throw new Error("not_granted");
+  const blob = await shrink(file);
+  const { id } = await assets.upload(blob, { type: blob.type || "image/jpeg" });
+  await dbRef.collection("lieux").doc(spotId).update({ photo: id, photoCredit: credit.trim().slice(0, 120) });
+  const spot = SPOTS.find((s) => s.id === spotId);
+  if (spot) {
+    spot.photo = id;
+    spot.photoCredit = credit.trim() || undefined;
+  }
+  emit({ version: cloud.version + 1 });
+  return id;
 }
 
 /* ---------- IA intégrée à l'aperçu ---------- */

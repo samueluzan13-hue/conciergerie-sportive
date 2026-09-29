@@ -1,7 +1,7 @@
 import { CATEGORY_LABEL, type Spot } from "../data/spots";
 import { toggleSaved, useStore } from "../lib/store";
 import { Icon } from "./Icon";
-import { SpotArt } from "./SpotArt";
+import { SpotPhoto } from "./SpotPhoto";
 import { useSpotSheet } from "./SpotSheet";
 
 export function Price({ level }: { level: number }) {
@@ -40,7 +40,7 @@ export function SpotCard({ spot, distance }: { spot: Spot; distance?: number }) 
   return (
     <article className="spot-card" onClick={() => open(spot.id)}>
       <div className="spot-card-art">
-        <SpotArt spot={spot} height={112} rounded={16} />
+        <SpotPhoto spot={spot} height={112} rounded={16} />
         <span className="chip-cat">{CATEGORY_LABEL[spot.category]}</span>
         <SaveButton id={spot.id} />
       </div>
@@ -59,7 +59,7 @@ export function SpotRow({ spot, meta }: { spot: Spot; meta?: string }) {
   return (
     <article className="spot-row" onClick={() => open(spot.id)}>
       <div className="spot-row-art">
-        <SpotArt spot={spot} height={64} rounded={14} />
+        <SpotPhoto spot={spot} height={64} rounded={14} />
       </div>
       <div className="grow">
         <h3>{spot.name}</h3>

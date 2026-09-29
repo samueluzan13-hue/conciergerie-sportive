@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Spot as SpotT } from "../data/spots";
 import { bookingKind, CATEGORY_LABEL, MOOD_LABEL, spotById, usuallyNoBooking, type Spot } from "../data/spots";
 import { pushHistory } from "../lib/store";
 import { Icon } from "./Icon";
-import { SpotArt } from "./SpotArt";
+import { SpotPhoto } from "./SpotPhoto";
+import { getAssets, setSpotPhoto } from "../lib/cloud";
 import { HiddenBadge, Price, SaveButton } from "./SpotCard";
 
 const Ctx = createContext<(id: string) => void>(() => {});
@@ -16,6 +18,50 @@ export function bookingUrl(spot: Spot) {
 
 export function directionsUrl(spot: Spot) {
   return `https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}`;
+}
+
+function PhotoEditor({ spot }: { spot: SpotT }) {
+  const [canUpload, setCanUpload] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [credit, setCredit] = useState(spot.photoCredit ?? "");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  useEffect(() => {
+    getAssets().then((a) => setCanUpload(Boolean(a)));
+  }, []);
+  if (!canUpload) return null;
+  if (!open) {
+    return (
+      <button className="btn-text" onClick={() => setOpen(true)}>
+        <Icon name="plus" size={14} /> {spot.photo ? "Changer la photo" : "Ajouter une photo"}
+      </button>
+    );
+  }
+  return (
+    <div className="photo-edit">
+      <strong className="small">Photo de {spot.name}</strong>
+      <p className="tiny muted">Utilise une photo que tu as prise ou dont tu as les droits (pas de copie depuis Google Maps).</p>
+      <input id={`credit-${spot.id}`} className="input" value={credit} onChange={(e) => setCredit(e.target.value)} placeholder="Crédit (ex. Photo : Samuel)" maxLength={120} />
+      <input
+        id={`photo-${spot.id}`}
+        type="file"
+        accept="image/*"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setState("sending");
+          try {
+            await setSpotPhoto(spot.id, file, credit);
+            setState("done");
+          } catch {
+            setState("error");
+          }
+        }}
+      />
+      {state === "sending" && <p className="small">Envoi de la photo…</p>}
+      {state === "done" && <p className="small">Photo ajoutée ✔</p>}
+      {state === "error" && <p className="error small">L'envoi a échoué. Vérifie que tu as les droits d'édition et que le fichier est une image, puis réessaie.</p>}
+    </div>
+  );
 }
 
 export function SpotSheetProvider({ children }: { children: ReactNode }) {
@@ -39,12 +85,13 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
           <div className="sheet" role="dialog" aria-modal="true" aria-label={spot.name} onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
             <div className="sheet-art">
-              <SpotArt spot={spot} height={170} rounded={22} />
+              <SpotPhoto spot={spot} height={200} rounded={22} showCredit />
               <button className="sheet-close" aria-label="Fermer" onClick={() => setId(null)}>
                 <Icon name="close" size={18} />
               </button>
               <SaveButton id={spot.id} />
             </div>
+            <PhotoEditor key={spot.id} spot={spot} />
             <div className="row-between" style={{ marginTop: 14 }}>
               <span className="eyebrow">{CATEGORY_LABEL[spot.category]} · {spot.quartier}</span>
               <Price level={spot.price} />

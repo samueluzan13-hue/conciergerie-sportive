@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { MarcoLogo } from "../components/MarcoLogo";
-import { SpotArt } from "../components/SpotArt";
+import { SpotPhoto } from "../components/SpotPhoto";
 import { bookingUrl, useSpotSheet } from "../components/SpotSheet";
 import { bookingKind, CATEGORY_LABEL, QUARTIERS } from "../data/spots";
 import { generatePlan, type Budget, type Duration, type Envie, type Plan, type PlanInput, type Who } from "../lib/planner";
@@ -86,7 +86,7 @@ export function Planner() {
                 </div>
                 <div className="tl-dot">{i + 1}</div>
                 <div className="tl-card" onClick={() => openSpot(s.spot.id)}>
-                  <div className="tl-art"><SpotArt spot={s.spot} height={70} rounded={12} /></div>
+                  <div className="tl-art"><SpotPhoto spot={s.spot} height={70} rounded={12} /></div>
                   <div className="grow">
                     <span className="tiny eyebrow">{CATEGORY_LABEL[s.spot.category]} · {s.spot.quartier}</span>
                     <h3>{s.spot.name}</h3>

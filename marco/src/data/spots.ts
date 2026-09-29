@@ -1,4 +1,7 @@
+import { EXTRA_SPOTS } from "./spots-extra";
 export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite";
+
+export type Diet = "casher" | "halal";
 
 export type Mood = "tendance" | "insolite" | "bobo" | "jazz" | "cache" | "romantique" | "famille" | "petit-budget";
 
@@ -20,6 +23,8 @@ export interface Spot {
   /** durée conseillée sur place, en minutes */
   duration: number;
   bookable?: "table" | "activite";
+  /** cuisine casher / halal (certification à vérifier sur place) */
+  diet?: Diet[];
 }
 
 export const CATEGORY_LABEL: Record<Category, string> = {
@@ -42,7 +47,7 @@ export const MOOD_LABEL: Record<Mood, string> = {
   "petit-budget": "Petit budget",
 };
 
-export const SPOTS: Spot[] = [
+const BASE_SPOTS: Spot[] = [
   {
     id: "comptoir-relais",
     name: "Le Comptoir du Relais",
@@ -499,6 +504,10 @@ export const SPOTS: Spot[] = [
     duration: 120,
   },
 ];
+
+export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS];
+
+export const DIET_LABEL: Record<Diet, string> = { casher: "Casher", halal: "Halal" };
 
 export function spotById(id: string) {
   return SPOTS.find((s) => s.id === id);

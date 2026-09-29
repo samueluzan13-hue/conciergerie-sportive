@@ -9,6 +9,7 @@ import { layoutSnapshot, log } from "./lib/diag";
 import { connectCloud, setState, useStore } from "./lib/store";
 import { Admin } from "./pages/Admin";
 import { MapPage } from "./pages/MapPage";
+import { Nights } from "./pages/Nights";
 import { Propose } from "./pages/Propose";
 import { Chat } from "./pages/Chat";
 import { Explorer } from "./pages/Explorer";
@@ -85,6 +86,7 @@ export default function App() {
                     <Route path="/rues" element={<Streets />} />
                     <Route path="/voyages" element={<Voyages />} />
                     <Route path="/proposer" element={<Propose />} />
+                    <Route path="/soirees" element={<Nights />} />
                     <Route path="/base" element={<Admin />} />
                     <Route path="*" element={<Home />} />
                   </Routes>

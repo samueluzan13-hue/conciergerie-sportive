@@ -24,8 +24,8 @@ const STORIES: { mood: Mood; label: string; letter: string }[] = [
 const ACTIONS = [
   { to: "/planner", icon: "calendar", title: "Planifier", sub: "Ma journée sur-mesure" },
   { to: "/rues", icon: "book", title: "Une rue", sub: "Son histoire, ses potins" },
-  { to: "/carte", icon: "pin", title: "Autour de moi", sub: "Les pépites du quartier" },
-  { to: "/voyages", icon: "plane", title: "Voyages", sub: "Bientôt : tout réserver" },
+  { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: "La nuit, arrondissement par arrondissement" },
+  { to: "/explorer?diet=casher", icon: "heart", title: "Casher & halal", sub: "Les bonnes adresses par quartier" },
 ];
 
 function greeting() {

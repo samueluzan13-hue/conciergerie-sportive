@@ -23,9 +23,18 @@ function StreetChip({ name }: { name: string }) {
   );
 }
 
+function GoChip({ to, label }: { to: string; label: string }) {
+  const navigate = useNavigate();
+  return (
+    <button className="spot-chip" onClick={() => navigate(to)}>
+      {label} <span aria-hidden>›</span>
+    </button>
+  );
+}
+
 function inline(text: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /\[\[spot:([a-z0-9-]+)\]\]|\[\[rue:([^\]]+)\]\]|\*\*(.+?)\*\*|_(.+?)_/g;
+  const re = /\[\[spot:([a-z0-9-]+)\]\]|\[\[rue:([^\]]+)\]\]|\*\*(.+?)\*\*|_(.+?)_|\[\[go:([^|\]]+)\|([^\]]+)\]\]/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let k = 0;
@@ -35,6 +44,7 @@ function inline(text: string): ReactNode[] {
     else if (m[2]) out.push(<StreetChip key={k++} name={m[2]} />);
     else if (m[3]) out.push(<strong key={k++}>{m[3]}</strong>);
     else if (m[4]) out.push(<em key={k++}>{m[4]}</em>);
+    else if (m[5]) out.push(<GoChip key={k++} to={m[5]} label={m[6]} />);
     last = re.lastIndex;
   }
   if (last < text.length) out.push(text.slice(last));

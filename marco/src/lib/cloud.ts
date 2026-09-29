@@ -101,6 +101,7 @@ export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
     tip: str(d.tip, 600),
     duration: clamp(num(d.duration, 60), 10, 300),
     bookable: d.bookable === "table" || d.bookable === "activite" ? d.bookable : undefined,
+    diet: Array.isArray(d.diet) ? (d.diet.filter((x) => x === "casher" || x === "halal") as Spot["diet"]) : undefined,
   };
 }
 
@@ -231,6 +232,29 @@ export async function sendSuggestion(s: Omit<Suggestion, "id" | "createdAt">) {
 }
 export async function deleteSuggestion(id: string) {
   await dbRef?.collection("suggestions").doc(id).delete();
+}
+
+/* ---------- Récits des rues (écrits une fois par l'IA, partagés ensuite) ---------- */
+const recitId = (name: string) => slug(name).slice(0, 120);
+
+export async function getRecit(name: string): Promise<string | null> {
+  if (!dbRef) return null;
+  try {
+    const snap = await dbRef.collection("recits").doc(recitId(name)).get();
+    const text = snap.exists ? snap.data()?.text : null;
+    return typeof text === "string" && text.length > 40 ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveRecit(name: string, text: string) {
+  if (!dbRef || !cloud.canWrite) return;
+  try {
+    await dbRef.collection("recits").doc(recitId(name)).set({ name, text: text.slice(0, 8000), createdAt: Date.now() });
+  } catch {
+    /* écriture refusée (droits) : pas grave, le récit reste affiché */
+  }
 }
 
 /* ---------- IA intégrée à l'aperçu ---------- */

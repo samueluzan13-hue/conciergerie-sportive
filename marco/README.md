@@ -18,8 +18,10 @@ L'utilisateur dit ce qu'il veut faire, Marco construit le plan.
 | **Voyages** (bientôt) | Aperçu de séjour multi-jours + liste d'attente : la future réservation de voyage complète |
 | **Base de données** (`/base`, éditeurs) | Ajouter / modifier / supprimer lieux et rues, traiter les propositions |
 | **Proposer une pépite** | Les utilisateurs envoient une adresse, elle arrive dans les propositions |
+| **Sortir ce soir** (`/soirees`) | L'ambiance nocturne et les lieux de chaque arrondissement (1er → 20e), liens programme et itinéraire |
+| **Casher & halal** | Filtres dans Explorer + quartiers où chercher, avec rappel de vérifier la certification sur place |
 
-Données : `src/data/spots.ts` (35 adresses, dont beaucoup cachées) et `src/data/streets.ts` (28 rues). Pour en ajouter, il suffit de compléter ces fichiers.
+Données : `src/data/spots.ts` + `src/data/spots-extra.ts` (89 adresses, du très connu au très caché), `src/data/guides.ts` (soirées par arrondissement, quartiers casher / halal) et `src/data/streets.ts` (28 rues). Pour en ajouter, il suffit de compléter ces fichiers.
 
 ## Annuaire des voies de Paris
 
@@ -30,7 +32,7 @@ Données : `src/data/spots.ts` (35 adresses, dont beaucoup cachées) et `src/dat
 
 ## Base de données
 
-- **Aperçu claude.ai** : la page utilise la base intégrée (`src/lib/cloud.ts`) : collections `lieux`, `rues`, `suggestions`, et un document privé par utilisateur (`data/users/<id>/etat` : profil, favoris, plans, historique). Seuls les éditeurs modifient `lieux` et `rues`.
+- **Aperçu claude.ai** : la page utilise la base intégrée (`src/lib/cloud.ts`) : collections `lieux`, `rues`, `suggestions`, `recits` (histoires de rues écrites une fois par l'IA puis partagées), et un document privé par utilisateur (`data/users/<id>/etat` : profil, favoris, plans, historique). Seuls les éditeurs modifient `lieux` et `rues`.
 - **Site classique** : sans base branchée, l'app utilise les données intégrées et l'appareil de l'utilisateur. Pour la production, brancher une base (Supabase, Firebase…) derrière les mêmes fonctions de `src/lib/cloud.ts`.
 
 ## Lancer en local

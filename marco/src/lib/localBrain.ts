@@ -1,5 +1,6 @@
 // Le "cerveau local" de Marco : répond sans IA en ligne, à partir de sa base d'adresses et de rues.
-import { SPOTS, QUARTIERS, type Spot } from "../data/spots";
+import { SPOTS, QUARTIERS, type Diet, type Spot } from "../data/spots";
+import { arrFromText, DIET_NOTE, DIET_ZONES, NIGHT, NIGHT_NOTE } from "../data/guides";
 import { findStreet, type StreetStory } from "../data/streets";
 import { arrLabel, exactVoie, searchVoies } from "../data/voies";
 import { distanceKm } from "./geo";
@@ -21,15 +22,29 @@ export function streetMarkdown(s: StreetStory) {
     .join("\n\n");
 }
 
+/** Centre approximatif d'un arrondissement (moyenne des lieux connus). */
+function arrCenter(arr: number) {
+  const inArr = SPOTS.filter((s) => s.arrondissement === arr);
+  if (!inArr.length) return null;
+  return { lat: inArr.reduce((a, s) => a + s.lat, 0) / inArr.length, lng: inArr.reduce((a, s) => a + s.lng, 0) / inArr.length };
+}
+
+/** Choisit n lieux : d'abord l'arrondissement demandé, sinon près de chez l'utilisateur ; un peu de hasard pour varier. */
 function pick(filter: (s: Spot) => boolean, t: string, n = 3) {
   const { profile } = getState();
-  const q = QUARTIERS.find((x) => norm(t).includes(norm(x.name).split(" /")[0])) ??
-    QUARTIERS.find((x) => x.name === profile.quartier) ?? QUARTIERS[0];
-  return SPOTS.filter(filter)
-    .map((s) => ({ s, d: distanceKm(q, s) - s.hidden * 0.4 }))
+  const arr = arrFromText(t);
+  const origin = (arr && arrCenter(arr)) ||
+    QUARTIERS.find((x) => norm(t).includes(norm(x.name).split(" /")[0])) ||
+    QUARTIERS.find((x) => x.name === profile.quartier) || QUARTIERS[0];
+  const ranked = SPOTS.filter(filter)
+    .map((s) => ({ s, d: distanceKm(origin, s) - s.hidden * 0.4 - (arr && s.arrondissement === arr ? 5 : 0) }))
     .sort((a, b) => a.d - b.d)
-    .slice(0, n)
     .map((x) => x.s);
+  // variété : on pioche dans une fenêtre un peu plus large que n
+  const window = ranked.slice(0, n + 3);
+  const chosen: Spot[] = [];
+  while (chosen.length < n && window.length) chosen.push(window.splice(Math.floor(Math.random() * Math.min(window.length, 3)), 1)[0]);
+  return chosen;
 }
 
 const list = (spots: Spot[]) => spots.map((s) => `- [[spot:${s.id}]] — ${s.pitch}`).join("\n");
@@ -80,7 +95,33 @@ export function localReply(input: string): string {
     return `Sur chaque fiche, le bouton **Réserver** t'envoie chez nos partenaires (table ou activité), sans surcoût pour toi.\n\nEt bientôt, tu pourras réserver **tout ton voyage** directement dans Marco : hébergement, activités, restos, le tout dans un seul plan. Inscris-toi sur la page **Voyages** pour être prévenu${name ? "," + name : ""}.`;
   }
 
-  // 4. Recherches par envie
+  // 4. Casher / halal
+  const diet: Diet | null = has(t, ["casher", "cacher", "kasher", "kosher"]) ? "casher" : has(t, ["halal", "hallal"]) ? "halal" : null;
+  if (diet) {
+    const arr = arrFromText(t);
+    const spots = pick((s) => Boolean(s.diet?.includes(diet)), t, 3);
+    const zones = DIET_ZONES.filter((z) => z.diet === diet).sort((a, b) => Number(arr ? b.arr.includes(arr) : 0) - Number(arr ? a.arr.includes(arr) : 0));
+    const inArr = arr ? zones.filter((z) => z.arr.includes(arr)) : [];
+    const head = arr
+      ? inArr.length
+        ? `Pour manger ${diet} dans le ${arr === 1 ? "1er" : `${arr}e`}, voilà où aller :`
+        : `Dans le ${arr === 1 ? "1er" : `${arr}e`}, je n'ai pas encore d'adresse ${diet} vérifiée. Les quartiers les mieux fournis :`
+      : `Pour manger ${diet} à Paris, les quartiers où chercher :`;
+    return `${head}\n\n${zones.slice(0, 4).map((z) => `- **${z.name}** (${z.arr.map((x) => (x === 1 ? "1er" : `${x}e`)).join(", ")}) : ${z.streets}. ${z.text}`).join("\n")}${
+      spots.length ? `\n\n**Dans la sélection Marco**\n${list(spots)}` : ""
+    }\n\n_${DIET_NOTE}_`;
+  }
+
+  // 5. Soirées
+  if (has(t, ["soiree", "sortir", "ce soir", "club", "boite", "danser", "fete", "nuit", "concert", "cabaret", "teuf", "guinguette"]) && !has(t, ["jazz"])) {
+    const arr = arrFromText(t);
+    const guides = arr ? NIGHT.filter((n) => n.arr === arr) : [11, 18, 10].map((a) => NIGHT.find((n) => n.arr === a)!);
+    const fmt = (g: (typeof NIGHT)[number]) =>
+      `### Le ${g.arr === 1 ? "1er" : `${g.arr}e`} la nuit\n${g.vibe}\n\n${g.venues.map((v) => `- **${v.name}** (${v.kind}) — ${v.address}. ${v.tip}`).join("\n")}`;
+    return `${arr ? "" : "Les arrondissements où ça bouge le plus :\n\n"}${guides.map(fmt).join("\n\n")}\n\n_${NIGHT_NOTE}_\n\n[[go:/soirees|Voir les soirées des 20 arrondissements]]`;
+  }
+
+  // 6. Recherches par envie
   const romantic = has(t, ["date", "romant", "amoureu", "couple"]);
   if (has(t, ["jazz", "musique", "concert", "danser", "swing"])) return `Ça swingue par ici :\n\n${list(pick((s) => s.moods.includes("jazz"), t))}`;
   if (has(t, ["verre", "bar", "cocktail", "apero", "boire", "vin"])) {

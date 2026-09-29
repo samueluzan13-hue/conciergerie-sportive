@@ -8,6 +8,7 @@ import { SPOTS, spotById } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
 import { arrLabel, findVoie, searchVoies, storyFor, VOIES, voiesByArr, type Voie } from "../data/voies";
 import { askMarco } from "../lib/ai";
+import { getRecit, saveRecit } from "../lib/cloud";
 import { log } from "../lib/diag";
 import { markStreetRead } from "../lib/store";
 
@@ -59,7 +60,17 @@ function VoieView({ v, query }: { v?: Voie; query: string }) {
       ? `Voie : ${v.n} (${arrLabel(v.a)} arrondissement${v.a.length > 1 ? "s" : ""}).${v.o ? ` Origine officielle du nom : ${v.o}` : ""}${v.h ? ` Historique officiel : ${v.h}` : ""}`
       : `Voie demandée : "${query}" (elle n'est pas dans l'annuaire de l'app ; vérifie qu'elle existe bien à Paris).`;
     log("street:ai", name);
-    askMarco(
+    (async () => {
+    // 1. déjà raconté ? (base partagée)
+    const cached = v ? await getRecit(v.n) : null;
+    if (cancelled) return;
+    if (cached) {
+      setStory(cached);
+      setState("done");
+      return;
+    }
+    // 2. sinon Marco l'écrit, et on le garde pour les suivants
+    const r = await askMarco(
       [
         {
           role: "user",
@@ -67,11 +78,12 @@ function VoieView({ v, query }: { v?: Voie; query: string }) {
         },
       ],
       { deep: true, onText: (t) => !cancelled && (setStory(t), setState("loading")) },
-    ).then((r) => {
-      if (cancelled) return;
-      setStory(r);
-      setState(r ? "done" : "none");
-    });
+    );
+    if (cancelled) return;
+    setStory(r);
+    setState(r ? "done" : "none");
+    if (r && v && r.length > 200 && /anecdote/i.test(r)) saveRecit(v.n, r);
+    })();
     return () => {
       cancelled = true;
     };

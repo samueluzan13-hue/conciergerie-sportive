@@ -71,8 +71,9 @@ h3 { font-size: 15px; font-weight: 700; line-height: 1.3; }
 /* L'app est un "écran" : hauteur fixe, une seule zone qui défile à l'intérieur (.content).
    Rien ne dépend de la hauteur de la fenêtre, ce qui marche aussi dans un cadre intégré. */
 html, body, #root { height: 100%; }
-body { overflow: hidden; }
-.shell { height: 100%; }
+body { overflow-x: hidden; overflow-y: auto; }
+/* garde-fou : même si le cadre ne donne pas de hauteur, l'app reste visible */
+.shell { height: 100%; min-height: 560px; }
 .device { position: relative; max-width: 480px; height: 100%; margin: 0 auto; background: var(--cream); overflow: hidden; display: flex; flex-direction: column; }
 .content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px)); }
 .desktop-aside { display: none; }

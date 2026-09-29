@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { SPOTS, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
+import { log, setDiagSink } from "./diag";
 
 /* ---------- Types minimaux des capacités (voir la doc du runtime) ---------- */
 interface DocSnap { id: string; exists: boolean; data(): Record<string, unknown> | undefined }
@@ -22,7 +23,7 @@ interface ColRef {
 interface Db { doc(p: string): DocRef; collection(p: string): ColRef }
 interface User { id(): Promise<string | null>; canEdit(): Promise<boolean>; can(n: string): Promise<boolean | null> }
 export interface SampleFn {
-  (input: string | { role: "user" | "assistant"; content: string }[], opts?: { onText?: (e: { text: string }) => void; modelTier?: string; cache?: boolean }): Promise<{ text: string }>;
+  (input: string | { role: "user" | "assistant"; content: string }[], opts?: { onText?: (e: { text: string }) => void; modelTier?: string; cache?: boolean; signal?: AbortSignal }): Promise<{ text: string }>;
 }
 declare global {
   interface Window { claude?: { use(name: string): Promise<unknown> } }
@@ -132,7 +133,9 @@ let started = false;
 export async function startCloud(onUserState: (state: Record<string, unknown> | null) => void) {
   if (started) return;
   started = true;
+  log("cloud:start", { hasClaude: Boolean(window.claude?.use) });
   const [db, user] = await Promise.all([use<Db>("db"), use<User>("user")]);
+  log("cloud:caps", { db: Boolean(db), user: Boolean(user) });
   if (!db) return;
   dbRef = db;
   const [userId, isAdmin, canWrite] = await Promise.all([
@@ -141,15 +144,24 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
     user?.can("data.write").catch(() => null) ?? null,
   ]);
   emit({ db: true, userId, isAdmin, canWrite: canWrite ?? true });
+  log("cloud:user", { userId: Boolean(userId), isAdmin, canWrite });
+  if (userId) {
+    let writing: Promise<void> = Promise.resolve();
+    const ref = db.doc(`data/users/${userId}/diag`);
+    setDiagSink((entries) => {
+      writing = writing.then(() => ref.set({ entries, updatedAt: Date.now() }).catch(() => {}));
+    });
+  }
 
   db.collection("lieux").onSnapshot((snap) => {
+    log("db:lieux", snap.docs.length);
     const items = snap.docs.map((d) => toSpot(d.id, d.data() ?? {})).filter((x): x is Spot => !!x);
     if (items.length && replace(SPOTS, items)) emit({ fromDb: true, version: cloud.version + 1 });
-  });
+  }, (e) => log("db:lieux:error", e.code));
   db.collection("rues").onSnapshot((snap) => {
     const items = snap.docs.map((d) => toStreet(d.id, d.data() ?? {})).filter((x): x is StreetStory => !!x);
     if (items.length && replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")))) emit({ fromDb: true, version: cloud.version + 1 });
-  });
+  }, (e) => log("db:rues:error", e.code));
   if (isAdmin) {
     db.collection("suggestions").onSnapshot((snap) => {
       emit({

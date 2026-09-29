@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { Markdown } from "../components/Markdown";
 import { MarcoLogo } from "../components/MarcoLogo";
 import { askMarco, checkAi, type ChatMessage } from "../lib/ai";
-import { localReply } from "../lib/localBrain";
+import { log } from "../lib/diag";
+import { isGenericReply, localReply } from "../lib/localBrain";
 import { useStore } from "../lib/store";
 
 const QUICK = [
@@ -33,7 +34,6 @@ export function Chat() {
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState("");
   const [ai, setAi] = useState<boolean | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkAi().then(setAi);
@@ -45,7 +45,9 @@ export function Chat() {
     } catch {
       /* ignore */
     }
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // on fait défiler uniquement la zone du chat (scrollIntoView peut déplacer toute la page dans un cadre)
+    const box = document.querySelector(".content");
+    if (box) box.scrollTop = box.scrollHeight;
   }, [messages, busy, live]);
 
   // Sur téléphone, on masque la barre du bas pendant la saisie (le clavier prend la place).
@@ -59,9 +61,21 @@ export function Chat() {
     setInput("");
     setBusy(true);
     setLive("");
-    const reply = (await askMarco(next, { onText: setLive })) ?? localReply(t);
-    if (!(await checkAi())) await new Promise((r) => setTimeout(r, 450)); // laisse le temps de voir Marco réfléchir
-    setMessages([...next, { role: "assistant", content: reply }]);
+    log("chat:send", t.slice(0, 60));
+    // 1. Réponse immédiate depuis la base d'adresses de Marco : jamais d'écran vide ni d'attente.
+    const local = localReply(t);
+    const generic = isGenericReply(local);
+    const base: ChatMessage[] = generic ? next : [...next, { role: "assistant", content: local }];
+    if (!generic) setMessages(base);
+    // 2. Si l'IA est disponible, elle complète (ou répond si la base n'avait rien de précis).
+    let reply: string | null = null;
+    try {
+      if (await checkAi()) reply = await askMarco(next, { onText: setLive, alreadyShown: generic ? undefined : local });
+      else await new Promise((r) => setTimeout(r, 300));
+    } catch (e) {
+      log("chat:error", e);
+    }
+    setMessages(reply ? [...base, { role: "assistant", content: reply }] : generic ? [...base, { role: "assistant", content: local }] : base);
     setLive("");
     setBusy(false);
   };
@@ -126,7 +140,6 @@ export function Chat() {
             )}
           </div>
         )}
-        <div ref={endRef} />
       </div>
 
       <form

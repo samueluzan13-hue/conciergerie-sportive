@@ -33,6 +33,9 @@ function pick(filter: (s: Spot) => boolean, t: string, n = 3) {
 
 const list = (spots: Spot[]) => spots.map((s) => `- [[spot:${s.id}]] — ${s.pitch}`).join("\n");
 
+/** Vrai si le cerveau local n'a rien trouvé de précis (réponse d'aide générique). */
+export const isGenericReply = (reply: string) => reply.startsWith("Je ne suis pas sûr");
+
 export function localReply(input: string): string {
   const t = norm(input);
   const { profile } = getState();

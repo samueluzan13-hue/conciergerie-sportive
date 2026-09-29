@@ -5,7 +5,8 @@ import { BottomNav } from "./components/BottomNav";
 import { MarcoLogo } from "./components/MarcoLogo";
 import { SpotSheetProvider } from "./components/SpotSheet";
 import { useCloud } from "./lib/cloud";
-import { connectCloud, useStore } from "./lib/store";
+import { layoutSnapshot, log } from "./lib/diag";
+import { connectCloud, setState, useStore } from "./lib/store";
 import { Admin } from "./pages/Admin";
 import { MapPage } from "./pages/MapPage";
 import { Propose } from "./pages/Propose";
@@ -21,7 +22,10 @@ import { Voyages } from "./pages/Voyages";
 
 function ScrollTop() {
   const { pathname } = useLocation();
-  useEffect(() => document.querySelector(".content")?.scrollTo(0, 0), [pathname]);
+  useEffect(() => {
+    document.querySelector(".content")?.scrollTo(0, 0);
+    log("route", pathname);
+  }, [pathname]);
   return null;
 }
 
@@ -53,8 +57,14 @@ export default function App() {
   const onboarded = useStore((s) => s.profile.onboarded);
   // Quand les lieux / rues arrivent de la base, on redessine les écrans avec les nouvelles données.
   const { version } = useCloud();
-  useEffect(() => connectCloud(), []);
+  useEffect(() => {
+    log("boot", layoutSnapshot());
+    connectCloud();
+    const t = setTimeout(() => log("layout", layoutSnapshot()), 2500);
+    return () => clearTimeout(t);
+  }, []);
   return (
+    <ErrorBoundary onReset={() => setState((st) => ({ ...st }))}>
     <Router>
       <ScrollTop />
       <div className="shell">
@@ -89,5 +99,6 @@ export default function App() {
         </div>
       </div>
     </Router>
+    </ErrorBoundary>
   );
 }

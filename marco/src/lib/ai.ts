@@ -1,4 +1,5 @@
 import { getSample } from "./cloud";
+import { log } from "./diag";
 import { marcoInstructions, profileNote } from "./prompt";
 import { getState } from "./store";
 
@@ -21,7 +22,12 @@ function detect(): Promise<Backend> {
         /* pas de serveur */
       }
     }
-    return (await getSample()) ? "sample" : "none";
+    // On n'attend pas plus de 4 s la réponse du cadre ; si elle arrive plus tard, on en profite ensuite.
+    const sample = getSample();
+    const first = await Promise.race([sample, new Promise<null>((r) => setTimeout(() => r(null), 4000))]);
+    if (!first) sample.then((x) => x && (backend = Promise.resolve("sample")));
+    log("ai:backend", first ? "sample" : "none");
+    return first ? "sample" : "none";
   })();
   return backend;
 }
@@ -36,7 +42,7 @@ export async function checkAi(): Promise<boolean> {
  */
 export async function askMarco(
   messages: ChatMessage[],
-  opts: { onText?: (text: string) => void; deep?: boolean } = {},
+  opts: { onText?: (text: string) => void; deep?: boolean; alreadyShown?: string } = {},
 ): Promise<string | null> {
   const b = await detect();
   const { profile } = getState();
@@ -59,21 +65,43 @@ export async function askMarco(
   if (b === "sample") {
     const sample = await getSample();
     if (!sample) return null;
-    const intro = `${marcoInstructions()}\n\n${profileNote(profile)}\nDate du jour : ${new Date().toLocaleDateString("fr-FR")}.\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.`;
+    const intro = `${marcoInstructions()}\n\n${profileNote(profile)}\nDate du jour : ${new Date().toLocaleDateString("fr-FR")}.\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
+      opts.alreadyShown
+        ? `\n\nL'app vient déjà d'afficher cette première sélection à l'utilisateur :\n${opts.alreadyShown}\nNe la répète pas : complète-la (un plan concret, des conseils, d'autres idées), en restant bref.`
+        : ""
+    }`;
     // Les consignes sont un premier tour "user" que l'on garde toujours ; on limite l'historique.
     const turns = [{ role: "user" as const, content: intro }, ...messages.slice(-12)];
+    // Délais maximum : si l'IA ne commence pas à répondre (autorisation en attente, réseau…), on abandonne
+    // et le cerveau local de Marco prend le relais. L'app ne reste jamais bloquée.
+    const ctrl = new AbortController();
+    let started = false;
+    const firstTimer = setTimeout(() => !started && ctrl.abort(), opts.deep ? 45000 : 25000);
+    const totalTimer = setTimeout(() => ctrl.abort(), 90000);
+    let latest = "";
+    log("ai:ask", { tier: opts.deep ? "default" : "quick" });
     try {
       const { text } = await sample(turns, {
         modelTier: opts.deep ? "default" : "quick",
         cache: false,
-        onText: opts.onText ? (e) => opts.onText!(e.text) : undefined,
+        signal: ctrl.signal,
+        onText: (e) => {
+          started = true;
+          latest = e.text;
+          opts.onText?.(e.text);
+        },
       });
+      log("ai:ok", text.length);
       return text.trim() || null;
     } catch (e) {
       const code = (e as { code?: string })?.code;
+      log("ai:error", { code, message: (e as { message?: string })?.message });
       if (code === "not_granted") backend = Promise.resolve("none");
-      const partial = (e as { text?: string })?.text;
+      const partial = (e as { text?: string })?.text || latest;
       return partial?.trim() || null;
+    } finally {
+      clearTimeout(firstTimer);
+      clearTimeout(totalTimer);
     }
   }
   return null;

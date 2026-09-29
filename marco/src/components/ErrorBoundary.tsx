@@ -1,4 +1,5 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { log } from "../lib/diag";
 
 interface State { error: Error | null }
 
@@ -7,6 +8,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode; onReset: () 
   state: State = { error: null };
   static getDerivedStateFromError(error: Error): State {
     return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    log("render:error", `${error.message}\n${info.componentStack?.slice(0, 300) ?? ""}`);
   }
   render() {
     if (!this.state.error) return this.props.children;

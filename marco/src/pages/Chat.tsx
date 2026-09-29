@@ -4,9 +4,10 @@ import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { Markdown } from "../components/Markdown";
 import { MarcoLogo } from "../components/MarcoLogo";
-import { askMarco, checkAi, type ChatMessage } from "../lib/ai";
+import { aiIssue, askMarco, checkAi, type ChatMessage } from "../lib/ai";
+import { aiPermission, requestAi } from "../lib/cloud";
 import { log } from "../lib/diag";
-import { isGenericReply, localReply } from "../lib/localBrain";
+import { isGenericReply, lastLocalWasStrong, localReply } from "../lib/localBrain";
 import { useStore } from "../lib/store";
 
 const QUICK = [
@@ -34,10 +35,19 @@ export function Chat() {
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState("");
   const [ai, setAi] = useState<boolean | null>(null);
+  // autorisation de l'IA dans l'aperçu claude.ai : "prompt" = pas encore activée, "denied" = refusée
+  const [perm, setPerm] = useState<string>("granted");
 
   useEffect(() => {
     checkAi().then(setAi);
+    aiPermission().then(setPerm);
   }, []);
+
+  const activate = async () => {
+    const st = await requestAi();
+    setPerm(st);
+    log("ai:activate", st);
+  };
 
   useEffect(() => {
     try {
@@ -62,20 +72,26 @@ export function Chat() {
     setBusy(true);
     setLive("");
     log("chat:send", t.slice(0, 60));
-    // 1. Réponse immédiate depuis la base d'adresses de Marco : jamais d'écran vide ni d'attente.
+    // 1. La base d'adresses de Marco répond tout de suite quand elle a de quoi répondre précisément.
+    //    Sinon (rien dans l'arrondissement demandé, question hors base), on laisse l'IA répondre directement.
     const local = localReply(t);
-    const generic = isGenericReply(local);
-    const base: ChatMessage[] = generic ? next : [...next, { role: "assistant", content: local }];
-    if (!generic) setMessages(base);
-    // 2. Si l'IA est disponible, elle complète (ou répond si la base n'avait rien de précis).
+    const strong = lastLocalWasStrong() && !isGenericReply(local);
+    const aiOn = await checkAi();
+    setAi(aiOn);
+    const base: ChatMessage[] = strong ? [...next, { role: "assistant", content: local }] : next;
+    if (strong) setMessages(base);
+    log("chat:local", { strong, aiOn });
+    // 2. L'IA (Claude, sous le nom de Marco) répond à tout ; si elle n'est pas disponible, la base prend le relais.
     let reply: string | null = null;
     try {
-      if (await checkAi()) reply = await askMarco(next, { onText: setLive, alreadyShown: generic ? undefined : local });
+      if (aiOn) reply = await askMarco(next, { onText: setLive, alreadyShown: strong ? local : undefined });
       else await new Promise((r) => setTimeout(r, 300));
     } catch (e) {
       log("chat:error", e);
     }
-    setMessages(reply ? [...base, { role: "assistant", content: reply }] : generic ? [...base, { role: "assistant", content: local }] : base);
+    if (aiIssue() === "denied") setPerm("denied");
+    else aiPermission().then(setPerm);
+    setMessages(reply ? [...base, { role: "assistant", content: reply }] : strong ? base : [...base, { role: "assistant", content: local }]);
     setLive("");
     setBusy(false);
   };
@@ -104,6 +120,18 @@ export function Chat() {
           </button>
         )}
       </header>
+
+      {perm === "prompt" && (
+        <div className="ai-banner">
+          <p className="small"><b>Active l'IA de Marco</b> pour qu'il réponde à toutes tes questions (sport dans le 8e, atelier peinture dans le 15e, resto casher dans le 17e…).</p>
+          <button className="btn btn-primary" onClick={activate}>Activer</button>
+        </div>
+      )}
+      {perm === "denied" && (
+        <div className="ai-banner">
+          <p className="small">L'IA de Marco est désactivée : je réponds seulement avec ma base d'adresses. Pour la réactiver, ouvre le menu <b>Autorisations</b> de la page et autorise l'IA, puis recharge.</p>
+        </div>
+      )}
 
       <div className="chat-scroll">
         {messages.length === 0 && (
@@ -136,7 +164,7 @@ export function Chat() {
             {live ? (
               <div className="bubble-ai"><Markdown text={live} /></div>
             ) : (
-              <div className="bubble-ai typing-dots"><span /><span /><span /></div>
+              <div className="bubble-ai searching"><span className="typing-dots"><span /><span /><span /></span> <span className="tiny muted">Marco cherche…</span></div>
             )}
           </div>
         )}

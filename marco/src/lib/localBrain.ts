@@ -47,12 +47,62 @@ function pick(filter: (s: Spot) => boolean, t: string, n = 3) {
   return chosen;
 }
 
+const lab = (n: number) => (n === 1 ? "1er" : `${n}e`);
+const txt = (s: Spot) => norm(`${s.name} ${s.pitch} ${s.tip} ${s.quartier}`);
+
+/** Faux quand la réponse locale est faible (rien dans l'arrondissement demandé, ou rien trouvé) :
+ *  le chat attend alors l'IA plutôt que d'afficher une réponse à côté. */
+let strong = true;
+export const lastLocalWasStrong = () => strong;
+
+/** Thèmes reconnus dans une question libre → lieux correspondants. */
+const THEMES: { words: string[]; match: (s: Spot) => boolean; label: string }[] = [
+  { label: "sport", words: ["sport", "piscine", "nager", "natation", "bowling", "roller", "stade", "tennis", "foot", "velo", "courir", "running", "hippodrome", "courses", "escalade", "fitness", "yoga", "bouger"],
+    match: (s) => /piscine|bowling|roller|stade|tennis|velo|hippodrome|nage|danse|sport/.test(txt(s)) },
+  { label: "atelier créatif", words: ["peinture", "peindre", "dessin", "dessiner", "poterie", "ceramique", "aquarelle", "modelage", "couture", "tricot", "gravure", "atelier d'art", "creatif"],
+    match: (s) => s.category === "activite" && /peint|dessin|poterie|ceram|aquarell|modelage|couture|gravure|creati/.test(txt(s)) },
+  { label: "art", words: ["art ", "arts", "artiste", "galerie", "expo", "sculpture", "musee", "tableau"],
+    match: (s) => s.category === "culture" || /peint|artiste|sculpt|musee|atelier|galerie|expo|oeuvre|renoir|picasso/.test(txt(s)) },
+  { label: "gourmand", words: ["cours de cuisine", "atelier cuisine", "cuisiner", "patisserie", "oenologie", "degustation", "vin", "fromage", "chocolat"],
+    match: (s) => /cuisine|cours|degust|vin|patiss|croissant|chocolat/.test(txt(s)) && s.category !== "resto" },
+  { label: "eau", words: ["bateau", "croisiere", "canal", "seine", "peniche", "fleuve"],
+    match: (s) => /bateau|croisiere|canal|seine|peniche|fleuve|bassin/.test(txt(s)) },
+  { label: "vue", words: ["vue", "panorama", "rooftop", "toit", "hauteur", "coucher de soleil"],
+    match: (s) => /vue|panoram|toit|rooftop|coucher du soleil/.test(txt(s)) },
+  { label: "chiner", words: ["marche", "puces", "chiner", "brocante", "antiquaire", "shopping", "boutique"],
+    match: (s) => /marche|puces|brocant|antiquaire|boutique|passage/.test(txt(s)) },
+  { label: "cinema", words: ["cinema", "film", "ciné"], match: (s) => /cinema|film/.test(txt(s)) },
+  { label: "pluie", words: ["pluie", "il pleut", "interieur", "au sec"], match: (s) => s.category === "culture" || s.category === "activite" || /passage|couvert/.test(txt(s)) },
+];
+
+/** Liste honnête : priorité à l'arrondissement demandé, et on le dit quand il n'y a rien dedans. */
+function answer(intro: string, filter: (s: Spot) => boolean, t: string, n = 4, what = "de ce genre") {
+  const arr = arrFromText(t);
+  const chosen = pick(filter, t, n);
+  if (!chosen.length) {
+    strong = false;
+    return `Je n'ai rien ${what} dans ma sélection pour l'instant.`;
+  }
+  if (arr) {
+    const inArr = chosen.filter((s) => s.arrondissement === arr);
+    if (!inArr.length) {
+      strong = false;
+      return `Dans le ${lab(arr)} même, je n'ai encore rien ${what} dans ma sélection. Au plus près :\n\n${list(chosen)}`;
+    }
+    return `${intro.replace(/ :$/, "")} dans le ${lab(arr)} :\n\n${list(inArr)}${
+      inArr.length < chosen.length ? `\n\n**Tout près, dans les arrondissements voisins**\n${list(chosen.filter((s) => s.arrondissement !== arr))}` : ""
+    }`;
+  }
+  return `${intro}\n\n${list(chosen)}`;
+}
+
 const list = (spots: Spot[]) => spots.map((s) => `- [[spot:${s.id}]] — ${s.pitch}`).join("\n");
 
 /** Vrai si le cerveau local n'a rien trouvé de précis (réponse d'aide générique). */
 export const isGenericReply = (reply: string) => reply.startsWith("Je ne suis pas sûr");
 
 export function localReply(input: string): string {
+  strong = true;
   const t = norm(input);
   const { profile } = getState();
   const name = profile.name ? ` ${profile.name}` : "";
@@ -98,6 +148,8 @@ export function localReply(input: string): string {
   // 4. Casher / halal
   const diet: Diet | null = has(t, ["casher", "cacher", "kasher", "kosher"]) ? "casher" : has(t, ["halal", "hallal"]) ? "halal" : null;
   if (diet) {
+    // la base ne connaît que des quartiers : on laisse l'IA nommer de vrais restaurants quand elle est disponible
+    strong = false;
     const arr = arrFromText(t);
     const spots = pick((s) => Boolean(s.diet?.includes(diet)), t, 3);
     const zones = DIET_ZONES.filter((z) => z.diet === diet).sort((a, b) => Number(arr ? b.arr.includes(arr) : 0) - Number(arr ? a.arr.includes(arr) : 0));
@@ -105,7 +157,7 @@ export function localReply(input: string): string {
     const head = arr
       ? inArr.length
         ? `Pour manger ${diet} dans le ${arr === 1 ? "1er" : `${arr}e`}, voilà où aller :`
-        : `Dans le ${arr === 1 ? "1er" : `${arr}e`}, je n'ai pas encore d'adresse ${diet} vérifiée. Les quartiers les mieux fournis :`
+        : ((strong = false), `Dans le ${arr === 1 ? "1er" : `${arr}e`}, je n'ai pas encore d'adresse ${diet} vérifiée dans ma sélection. Les quartiers les mieux fournis :`)
       : `Pour manger ${diet} à Paris, les quartiers où chercher :`;
     return `${head}\n\n${zones.slice(0, 4).map((z) => `- **${z.name}** (${z.arr.map((x) => (x === 1 ? "1er" : `${x}e`)).join(", ")}) : ${z.streets}. ${z.text}`).join("\n")}${
       spots.length ? `\n\n**Dans la sélection Marco**\n${list(spots)}` : ""
@@ -121,22 +173,28 @@ export function localReply(input: string): string {
     return `${arr ? "" : "Les arrondissements où ça bouge le plus :\n\n"}${guides.map(fmt).join("\n\n")}\n\n_${NIGHT_NOTE}_\n\n[[go:/soirees|Voir les soirées des 20 arrondissements]]`;
   }
 
-  // 6. Activités
-  if (has(t, ["activite", "atelier", "cours de", "faire quoi", "quoi faire", "sport", "piscine", "nager", "bateau", "croisiere", "visite", "musee insolite", "enfant", "pluie", "il pleut", "jeu", "bowling", "danser le", "degustation", "insolite a faire", "occuper"]) && !has(t, ["manger", "resto", "diner", "dejeuner"])) {
+  // 6. Activités et thèmes (sport, peinture, bateau, vue, marchés…)
+  const themes = THEMES.filter((th) => has(t, th.words));
+  const food = has(t, ["manger", "resto", "restaurant", "diner", "dejeuner", "faim", "bouffe"]);
+  if (!food && (themes.length || has(t, ["activite", "atelier", "cours de", "faire quoi", "quoi faire", "visite", "enfant", "jeu", "occuper", "idee"]))) {
     const kids = has(t, ["enfant", "famille", "kids"]);
-    const spots = pick((s) => s.category === "activite" && (!kids || s.moods.includes("famille")), t, 4);
-    return `${kids ? "Des activités qui plaisent aux petits comme aux grands" : "Des idées d'activités, du classique au très confidentiel"} :\n\n${list(spots)}\n\nAppuie sur une activité pour **la réserver**.\n\n[[go:/explorer?cat=activite|Voir toutes les activités]]`;
+    const filter = (s: Spot) =>
+      (themes.length ? themes.some((th) => th.match(s)) : s.category === "activite" || s.category === "insolite") && (!kids || s.moods.includes("famille"));
+    const label = themes.length ? themes.map((th) => th.label).join(" / ") : "activités";
+    // une demande précise (« atelier de … », « cours de … ») que la base ne sait pas classer : l'IA répond mieux
+    if (!themes.length && has(t, ["atelier", "cours de", "club", "salle de", "stage"])) strong = false;
+    return `${answer(kids ? "Des idées qui plaisent aux petits comme aux grands :" : `Mes idées ${label === "activités" ? "d'activités" : `côté ${label}`} :`, filter, t, 4, themes.length ? `côté ${label}` : "de ce genre")}\n\nAppuie sur un lieu pour **réserver**.`;
   }
 
   // 7. Recherches par envie
   const romantic = has(t, ["date", "romant", "amoureu", "couple"]);
   if (has(t, ["jazz", "musique", "concert", "danser", "swing"])) return `Ça swingue par ici :\n\n${list(pick((s) => s.moods.includes("jazz"), t))}`;
   if (has(t, ["verre", "bar", "cocktail", "apero", "boire", "vin"])) {
-    return `${romantic ? "Pour un verre à deux qui fait son effet" : "Pour trinquer"}, voilà mes 3 bonnes :\n\n${list(pick((s) => s.category === "bar" && (!romantic || s.moods.includes("romantique") || s.hidden === 3), t))}`;
+    return answer(romantic ? "Pour un verre à deux qui fait son effet :" : "Pour trinquer, voilà mes bonnes adresses :", (s) => s.category === "bar" && (!romantic || s.moods.includes("romantique") || s.hidden === 3), t, 4, "comme bar");
   }
   if (has(t, ["manger", "resto", "restaurant", "diner", "dejeuner", "faim", "bouffe", "table"])) {
     const budget = has(t, ["pas cher", "budget", "fauche"]);
-    return `J'ai faim rien qu'à y penser :\n\n${list(pick((s) => s.category === "resto" && (!budget || s.price === 1), t))}\n\nAppuie sur une adresse pour **réserver une table**.`;
+    return `${answer("J'ai faim rien qu'à y penser :", (s) => s.category === "resto" && (!budget || s.price === 1), t, 4, "comme resto")}\n\nAppuie sur une adresse pour **réserver une table**.`;
   }
   if (has(t, ["cafe", "brunch", "the ", "gouter", "patisserie", "croissant"])) return `Pause bien méritée :\n\n${list(pick((s) => s.category === "cafe", t))}`;
   if (has(t, ["musee", "expo", "culture", "art", "histoire"])) return `Du culturel, mais pas du déjà-vu :\n\n${list(pick((s) => s.category === "culture", t))}`;

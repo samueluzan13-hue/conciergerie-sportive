@@ -1,4 +1,4 @@
-import { getSample } from "./cloud";
+import { aiPermission, getSample, requestAi } from "./cloud";
 import { log } from "./diag";
 import { marcoInstructions, profileNote } from "./prompt";
 import { getState } from "./store";
@@ -31,6 +31,10 @@ function detect(): Promise<Backend> {
   })();
   return backend;
 }
+
+/** Dernier problème rencontré avec l'IA de l'aperçu ("denied" = refusée par l'utilisateur). */
+let issue: "denied" | "error" | null = null;
+export const aiIssue = () => issue;
 
 export async function checkAi(): Promise<boolean> {
   return (await detect()) !== "none";
@@ -65,6 +69,14 @@ export async function askMarco(
   if (b === "sample") {
     const sample = await getSample();
     if (!sample) return null;
+    // L'autorisation d'utiliser l'IA est demandée ici, sans minuterie : l'utilisateur prend le temps de répondre.
+    let perm = await aiPermission();
+    if (perm === "prompt") perm = await requestAi();
+    log("ai:permission", perm);
+    if (perm === "denied") {
+      issue = "denied";
+      return null;
+    }
     const intro = `${marcoInstructions()}\n\n${profileNote(profile)}\nDate du jour : ${new Date().toLocaleDateString("fr-FR")}.\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
       opts.alreadyShown
         ? `\n\nL'app vient déjà d'afficher cette première sélection à l'utilisateur :\n${opts.alreadyShown}\nNe la répète pas : complète-la (un plan concret, des conseils, d'autres idées), en restant bref.`
@@ -76,13 +88,14 @@ export async function askMarco(
     // et le cerveau local de Marco prend le relais. L'app ne reste jamais bloquée.
     const ctrl = new AbortController();
     let started = false;
-    const firstTimer = setTimeout(() => !started && ctrl.abort(), opts.deep ? 45000 : 25000);
-    const totalTimer = setTimeout(() => ctrl.abort(), 90000);
+    const firstTimer = setTimeout(() => !started && ctrl.abort(), 60000);
+    const totalTimer = setTimeout(() => ctrl.abort(), 150000);
     let latest = "";
-    log("ai:ask", { tier: opts.deep ? "default" : "quick" });
+    const tier = "default";
+    log("ai:ask", { tier, q: messages[messages.length - 1]?.content.slice(0, 80) });
     try {
       const { text } = await sample(turns, {
-        modelTier: opts.deep ? "default" : "quick",
+        modelTier: tier,
         cache: false,
         signal: ctrl.signal,
         onText: (e) => {
@@ -92,11 +105,13 @@ export async function askMarco(
         },
       });
       log("ai:ok", text.length);
+      issue = null;
       return text.trim() || null;
     } catch (e) {
       const code = (e as { code?: string })?.code;
       log("ai:error", { code, message: (e as { message?: string })?.message });
-      if (code === "not_granted") backend = Promise.resolve("none");
+      if (code === "not_granted") issue = "denied";
+      else issue = "error";
       const partial = (e as { text?: string })?.text || latest;
       return partial?.trim() || null;
     } finally {

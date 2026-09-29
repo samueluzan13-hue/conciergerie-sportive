@@ -493,3 +493,10 @@ button.marco-card { text-align: left; width: 100%; }
 .photo-credit { position: absolute; right: 8px; bottom: 6px; font-size: 10px; color: #fff; background: rgba(0,0,0,.45); padding: 2px 7px; border-radius: 999px; }
 .photo-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 16px; border: 1.5px dashed #e3cdb4; }
 .photo-edit input[type="file"] { font-size: 13px; }
+
+/* Chat : activation de l'IA et recherche en cours */
+.ai-banner { display: flex; gap: 10px; align-items: center; margin: 0 16px 8px; padding: 10px 12px; border-radius: 14px; background: var(--orange-soft); border: 1px solid var(--line); }
+.ai-banner p { margin: 0; flex: 1; }
+.ai-banner .btn { padding: 8px 14px; font-size: 14px; }
+.bubble-ai.searching { display: flex; align-items: center; gap: 8px; }
+.searching .typing-dots { display: inline-flex; padding: 0; }

@@ -154,8 +154,16 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
   if (userId) {
     let writing: Promise<void> = Promise.resolve();
     const ref = db.doc(`data/users/${userId}/diag`);
+    // on garde aussi les sessions précédentes (les 150 derniers événements) pour pouvoir diagnostiquer après coup
+    const previous = ref.get().then((d) => {
+      const e = d.data()?.entries;
+      return Array.isArray(e) ? e.slice(-120) : [];
+    }).catch(() => []);
     setDiagSink((entries) => {
-      writing = writing.then(() => ref.set({ entries, updatedAt: Date.now() }).catch(() => {}));
+      writing = writing.then(async () => {
+        const all = [...(await previous), { t: "", ev: "---- session" }, ...entries].slice(-150);
+        await ref.set({ entries: all, updatedAt: Date.now() }).catch(() => {});
+      });
     });
   }
 
@@ -300,3 +308,21 @@ export async function setSpotPhoto(spotId: string, file: File, credit: string) {
 
 /* ---------- IA intégrée à l'aperçu ---------- */
 export const getSample = () => use<SampleFn>("sample");
+
+type PermState = "granted" | "prompt" | "denied" | "unavailable";
+interface Permissions {
+  state(name: string): Promise<PermState>;
+  request(names?: string[]): Promise<Record<string, PermState>>;
+}
+/** Autorisation de l'IA dans l'aperçu : "granted", "prompt" (à demander), "denied", "unavailable". */
+export async function aiPermission(): Promise<PermState> {
+  const p = await use<Permissions>("permissions");
+  return p ? p.state("sample").catch(() => "unavailable" as const) : "unavailable";
+}
+/** Demande l'autorisation de l'IA (une seule fenêtre ; ne rejette jamais). */
+export async function requestAi(): Promise<PermState> {
+  const p = await use<Permissions>("permissions");
+  if (!p) return "unavailable";
+  const r = await p.request(["sample"]).catch(() => ({}) as Record<string, PermState>);
+  return r.sample ?? "unavailable";
+}

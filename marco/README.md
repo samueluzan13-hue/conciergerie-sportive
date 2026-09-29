@@ -16,7 +16,6 @@ L'utilisateur dit ce qu'il veut faire, Marco construit le plan.
 | **Carte** | Carte de Paris dessinée (Seine, périphérique, monuments) avec les lieux et les rues racontées ; zoom et déplacement au doigt |
 | **Profil** | Goûts, quartier, enregistrements, plans, rues découvertes, historique |
 | **Voyages** (bientôt) | Aperçu de séjour multi-jours + liste d'attente : la future réservation de voyage complète |
-
 | **Base de données** (`/base`, éditeurs) | Ajouter / modifier / supprimer lieux et rues, traiter les propositions |
 | **Proposer une pépite** | Les utilisateurs envoient une adresse, elle arrive dans les propositions |
 

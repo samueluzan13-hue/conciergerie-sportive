@@ -21,6 +21,13 @@ L'utilisateur dit ce qu'il veut faire, Marco construit le plan.
 
 Données : `src/data/spots.ts` (35 adresses, dont beaucoup cachées) et `src/data/streets.ts` (28 rues). Pour en ajouter, il suffit de compléter ces fichiers.
 
+## Annuaire des voies de Paris
+
+`src/data/voies.json` référence les rues, avenues, boulevards, places, quais et passages de Paris (recherche tolérante, liste par arrondissement, fiche par voie racontée par Marco). Il est construit par `node scripts/build-voies.mjs` à partir de :
+
+1. `scripts/voies-initiales.txt` : première liste saisie à la main (≈1 300 voies) ;
+2. `scripts/voies-officielles.json` (optionnel) : l'export JSON du jeu de données officiel **« Dénominations des emprises des voies actuelles »** d'opendata.paris.fr, qui apporte **toutes** les voies avec l'origine du nom et l'historique. Déposer le fichier puis relancer le script.
+
 ## Base de données
 
 - **Aperçu claude.ai** : la page utilise la base intégrée (`src/lib/cloud.ts`) : collections `lieux`, `rues`, `suggestions`, et un document privé par utilisateur (`data/users/<id>/etat` : profil, favoris, plans, historique). Seuls les éditeurs modifient `lieux` et `rues`.

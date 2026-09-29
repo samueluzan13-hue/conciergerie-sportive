@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { spotById } from "../data/spots";
 import { useSpotSheet } from "./SpotSheet";
 
@@ -13,17 +14,27 @@ function SpotChip({ id }: { id: string }) {
   );
 }
 
+function StreetChip({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <button className="spot-chip street" onClick={() => navigate(`/rues?q=${encodeURIComponent(name)}`)}>
+      {name} <span aria-hidden>›</span>
+    </button>
+  );
+}
+
 function inline(text: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /\[\[spot:([a-z0-9-]+)\]\]|\*\*(.+?)\*\*|_(.+?)_/g;
+  const re = /\[\[spot:([a-z0-9-]+)\]\]|\[\[rue:([^\]]+)\]\]|\*\*(.+?)\*\*|_(.+?)_/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let k = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index));
     if (m[1]) out.push(<SpotChip key={k++} id={m[1]} />);
-    else if (m[2]) out.push(<strong key={k++}>{m[2]}</strong>);
-    else if (m[3]) out.push(<em key={k++}>{m[3]}</em>);
+    else if (m[2]) out.push(<StreetChip key={k++} name={m[2]} />);
+    else if (m[3]) out.push(<strong key={k++}>{m[3]}</strong>);
+    else if (m[4]) out.push(<em key={k++}>{m[4]}</em>);
     last = re.lastIndex;
   }
   if (last < text.length) out.push(text.slice(last));

@@ -1,6 +1,7 @@
 // Le "cerveau local" de Marco : répond sans IA en ligne, à partir de sa base d'adresses et de rues.
 import { SPOTS, QUARTIERS, type Spot } from "../data/spots";
 import { findStreet, type StreetStory } from "../data/streets";
+import { arrLabel, exactVoie, searchVoies } from "../data/voies";
 import { distanceKm } from "./geo";
 import { generatePlan, type PlanInput } from "./planner";
 import { getState } from "./store";
@@ -45,8 +46,15 @@ export function localReply(input: string): string {
   const streetQuery = input.match(/\b(rue|avenue|av\.?|boulevard|bd|place|passage|quai)\s+.+/i)?.[0];
   const street = findStreet(streetQuery ?? input);
   if (street && (streetQuery || input.trim().split(/\s+/).length <= 4)) return streetMarkdown(street);
-  if (streetQuery) {
-    return `Je n'ai pas encore la fiche de **${streetQuery.trim()}** dans ma mémoire hors-ligne. Branche mon IA (clé API) et je te raconte n'importe quelle rue de Paris.\n\nEn attendant, essaie : rue Mouffetard, rue Lepic, place des Vosges, rue du Chat-qui-Pêche…`;
+  const exact = streetQuery ? undefined : exactVoie(input);
+  const voies = exact ? [exact] : streetQuery ? searchVoies(streetQuery, 3) : [];
+  if (streetQuery || exact) {
+    if (voies.length) {
+      const v = voies[0];
+      const others = voies.slice(1).map((x) => `[[rue:${x.n}]]`).join(" ");
+      return `### ${v.n} · ${arrLabel(v.a)}\nJe la connais ! Ouvre sa fiche, je te raconte son histoire, un fait historique et une anecdote :\n\n[[rue:${v.n}]]${others ? `\n\nTu pensais peut-être à : ${others}` : ""}`;
+    }
+    return `Je ne trouve pas **${(streetQuery ?? input).trim()}** dans mon annuaire des voies de Paris. Vérifie l'orthographe, ou essaie : [[rue:Rue Mouffetard]] [[rue:Place des Vosges]] [[rue:Rue du Chat-qui-Pêche]]`;
   }
 
   // 2. Planification

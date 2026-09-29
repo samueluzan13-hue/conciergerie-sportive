@@ -511,3 +511,22 @@ button.marco-card { text-align: left; width: 100%; }
 .memory-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .memory-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
 .ask-marco { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Réservation prise en charge par Marco */
+.booking-card { margin: 4px 0 8px; min-width: 0; box-sizing: border-box; padding: 14px; border-radius: 18px; background: var(--paper); border: 1.5px solid var(--orange); display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); }
+.booking-card.sent { border-color: var(--green); }
+.booking-card label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.booking-card input { font: inherit; font-size: 15px; font-weight: 400; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
+.booking-title { margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.booking-card.sent .booking-title { color: var(--green); }
+.booking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.booking-grid label:first-child { grid-column: 1 / -1; }
+.booking-card .btn { white-space: normal; }
+.booking-card p { margin: 0; }
+.error-text { color: #b3412a; }
+.booking-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.booking-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line); }
+.booking-list p { margin: 2px 0 0; }
+.status { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: var(--orange-soft); color: #b44a0c; }
+.status-confirmee { background: #e2f2e7; color: var(--green); }
+.status-impossible { background: #f6e0da; color: #b3412a; }

@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../components/Icon";
-import { CATEGORY_LABEL, MOOD_LABEL, QUARTIERS, SPOTS, type Category, type Mood, type Spot } from "../data/spots";
+import { CATEGORY_LABEL, MOOD_LABEL, QUARTIERS, SPOTS, spotById, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
-import { deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Suggestion } from "../lib/cloud";
+import { answerBooking, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
+import { duckyUrl, reserveUrl } from "../lib/reservation";
 
-type Tab = "lieux" | "rues" | "propositions";
+type Tab = "lieux" | "rues" | "propositions" | "reservations";
 
 const EMPTY_SPOT: Spot = {
   id: "", name: "", category: "resto", quartier: QUARTIERS[0].name, arrondissement: 1, address: "",
@@ -16,6 +17,29 @@ const EMPTY_STREET: StreetStory = {
 };
 
 /** Bouton de suppression en deux temps (les boîtes de confirmation du navigateur ne sont pas disponibles partout). */
+/** Une demande de réservation : l'équipe appelle ou réserve en ligne, puis répond à l'utilisateur. */
+function BookingRow({ b }: { b: Booking }) {
+  const [msg, setMsg] = useState(b.reponse);
+  const spot = b.spotId ? spotById(b.spotId) : undefined;
+  const when = new Date(`${b.date}T${b.time}`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  return (
+    <div className="admin-row col">
+      <div className="row gap-8" style={{ justifyContent: "space-between" }}>
+        <strong>{b.place}</strong>
+        <span className={`status status-${b.status}`}>{b.status === "confirmee" ? "Confirmée" : b.status === "impossible" ? "Impossible" : "À traiter"}</span>
+      </div>
+      <span className="small">{when} à {b.time} · {b.people} pers. · au nom de {b.name} · <a className="link" href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}>{b.phone}</a></span>
+      {b.note && <p className="small muted">« {b.note} »</p>}
+      <a className="link small" href={spot ? reserveUrl(spot) : duckyUrl(b.place)} target="_blank" rel="noreferrer">Site du restaurant ›</a>
+      <input className="input" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Message pour l'utilisateur (ex. Table en terrasse, confirmée par SMS)" />
+      <div className="row gap-8">
+        <button className="btn-mini primary" onClick={() => answerBooking(b.id, "confirmee", msg)}>Confirmée</button>
+        <button className="btn-mini" onClick={() => answerBooking(b.id, "impossible", msg || "Complet à cet horaire : dis-moi si un autre créneau te va.")}>Impossible</button>
+      </div>
+    </div>
+  );
+}
+
 function DeleteButton({ onConfirm }: { onConfirm: () => Promise<void> }) {
   const [armed, setArmed] = useState(false);
   return armed ? (
@@ -175,6 +199,7 @@ export function Admin() {
   const navigate = useNavigate();
   const cloud = useCloud();
   const [tab, setTab] = useState<Tab>("lieux");
+  const pending = cloud.bookings.filter((b) => b.status === "en_attente").length;
   const [editSpot, setEditSpot] = useState<Spot | null>(null);
   const [editStreet, setEditStreet] = useState<StreetStory | null>(null);
   const [filter, setFilter] = useState("");
@@ -208,12 +233,22 @@ export function Admin() {
       <div className="segmented three">
         <button className={tab === "lieux" ? "on" : ""} onClick={() => setTab("lieux")}>Lieux</button>
         <button className={tab === "rues" ? "on" : ""} onClick={() => setTab("rues")}>Rues</button>
+        <button className={tab === "reservations" ? "on" : ""} onClick={() => setTab("reservations")}>
+          Réservations{pending ? ` (${pending})` : ""}
+        </button>
         <button className={tab === "propositions" ? "on" : ""} onClick={() => setTab("propositions")}>
           Propositions{cloud.suggestions.length ? ` (${cloud.suggestions.length})` : ""}
         </button>
       </div>
 
-      {tab !== "propositions" && (
+      {tab === "reservations" && (
+        <div className="admin-list">
+          {cloud.bookings.length === 0 && <p className="muted small">Aucune demande. Elles arrivent ici quand un utilisateur confirme une réservation proposée par Marco dans le chat.</p>}
+          {cloud.bookings.map((b) => <BookingRow key={b.id} b={b} />)}
+        </div>
+      )}
+
+      {tab !== "propositions" && tab !== "reservations" && (
         <div className="row gap-8">
           <div className="search grow">
             <Icon name="search" size={16} />

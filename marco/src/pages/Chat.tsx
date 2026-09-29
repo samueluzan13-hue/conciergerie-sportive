@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Link } from "../components/Nav";
+import { BookingCard } from "../components/BookingCard";
 import { Icon } from "../components/Icon";
 import { Markdown } from "../components/Markdown";
 import { MarcoLogo } from "../components/MarcoLogo";
@@ -176,6 +177,7 @@ export function Chat() {
                   )}
                 </div>
               </div>
+              {meta.resa && <BookingCard draft={meta.resa} />}
               {i === lastAi && (
                 <div className="follow-ups">
                   {meta.plan && (

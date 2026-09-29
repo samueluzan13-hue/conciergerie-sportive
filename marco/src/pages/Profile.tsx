@@ -1,16 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { SpotCard, SpotRow } from "../components/SpotCard";
 import { MOOD_LABEL, QUARTIERS, spotById, type Mood } from "../data/spots";
 import { STREETS } from "../data/streets";
-import { useCloud } from "../lib/cloud";
-import { forget, setState, updateProfile, useStore } from "../lib/store";
+import { useCloud, watchBooking } from "../lib/cloud";
+import { forget, setState, updateBooking, updateProfile, useStore } from "../lib/store";
 
 export function Profile() {
   const { profile, saved, history, plans, streetsRead } = useStore((s) => s);
-  const memory = useStore((s) => s.memory ?? []);
   const cloud = useCloud();
+  const memory = useStore((s) => s.memory ?? []);
+  const bookings = useStore((s) => s.bookings ?? []);
+  const bookingIds = bookings.map((b) => b.id).join(",");
+  // suivi en direct : l'équipe Marco confirme (ou non) dans la base
+  useEffect(() => {
+    const offs = bookings.map((b) => watchBooking(b.id, (x) => x && updateBooking(b.id, { status: x.status, reponse: x.reponse || undefined })));
+    return () => offs.forEach((off) => off());
+  }, [bookingIds, cloud.db]); // eslint-disable-line react-hooks/exhaustive-deps
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [name, setName] = useState(profile.name);
@@ -66,6 +73,28 @@ export function Profile() {
           </select>
         </label>
       </section>
+
+      {bookings.length > 0 && (
+        <section>
+          <h2 className="serif section-title"><Icon name="calendar" size={16} /> Mes réservations</h2>
+          <ul className="booking-list">
+            {bookings.map((b) => (
+              <li key={b.id}>
+                <div className="grow">
+                  <strong className="small">{b.place}</strong>
+                  <p className="tiny muted">
+                    {new Date(`${b.date}T${b.time}`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })} à {b.time} · {b.people} pers.
+                  </p>
+                  {b.reponse && <p className="tiny">Marco : {b.reponse}</p>}
+                </div>
+                <span className={`status status-${b.status}`}>
+                  {b.status === "confirmee" ? "Confirmée" : b.status === "impossible" ? "Impossible" : "En cours"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <div className="section-head">
@@ -156,7 +185,7 @@ export function Profile() {
             <button
               className="btn btn-danger grow"
               onClick={() => {
-                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [], memory: [] }));
+                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [], memory: [], bookings: [] }));
                 setConfirmReset(false);
               }}
             >

@@ -46,6 +46,26 @@ export interface CloudState {
   /** augmente à chaque changement des lieux / rues */
   version: number;
   suggestions: Suggestion[];
+  /** demandes de réservation (vue éditeur) */
+  bookings: Booking[];
+}
+
+export type BookingStatus = "en_attente" | "confirmee" | "impossible";
+export interface Booking {
+  id: string;
+  userId: string;
+  place: string;
+  spotId?: string;
+  date: string;
+  time: string;
+  people: number;
+  name: string;
+  phone: string;
+  note: string;
+  status: BookingStatus;
+  /** message de l'équipe Marco à l'utilisateur */
+  reponse: string;
+  createdAt: number;
 }
 
 export interface Suggestion {
@@ -57,7 +77,7 @@ export interface Suggestion {
   createdAt: number;
 }
 
-let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [] };
+let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [], bookings: [] };
 const listeners = new Set<() => void>();
 const emit = (patch: Partial<CloudState>) => {
   cloud = { ...cloud, ...patch };
@@ -177,6 +197,15 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
     if (items.length && replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")))) emit({ fromDb: true, version: cloud.version + 1 });
   }, (e) => log("db:rues:error", e.code));
   if (isAdmin) {
+    db.collection("reservations").onSnapshot((snap) => {
+      const order = { en_attente: 0, confirmee: 1, impossible: 2 };
+      emit({
+        bookings: snap.docs
+          .map((d) => toBooking(d.id, d.data() ?? {}))
+          .filter((b): b is Booking => !!b)
+          .sort((a, b) => order[a.status] - order[b.status] || b.createdAt - a.createdAt),
+      });
+    }, (e) => log("db:reservations:error", e.code));
     db.collection("suggestions").onSnapshot((snap) => {
       emit({
         suggestions: snap.docs
@@ -245,6 +274,41 @@ export async function sendSuggestion(s: Omit<Suggestion, "id" | "createdAt">) {
 }
 export async function deleteSuggestion(id: string) {
   await dbRef?.collection("suggestions").doc(id).delete();
+}
+
+/* ---------- Réservations prises en charge par Marco ---------- */
+function toBooking(id: string, x: Record<string, unknown>): Booking | null {
+  const status = x.status === "confirmee" || x.status === "impossible" ? x.status : "en_attente";
+  const place = str(x.place, 120);
+  if (!place) return null;
+  return {
+    id, place, status,
+    userId: str(x.userId, 80),
+    spotId: str(x.spotId, 80) || undefined,
+    date: str(x.date, 10), time: str(x.time, 5),
+    people: Math.max(1, Math.min(20, num(x.people) || 1)),
+    name: str(x.name, 80), phone: str(x.phone, 30), note: str(x.note, 400),
+    reponse: str(x.reponse, 400), createdAt: num(x.createdAt),
+  };
+}
+
+/** Envoie la demande à l'équipe Marco. Renvoie l'identifiant, ou lève une erreur si la base refuse. */
+export async function requestBooking(b: Omit<Booking, "id" | "userId" | "status" | "reponse" | "createdAt">): Promise<string> {
+  if (!dbRef || !cloud.userId) throw new Error("Base indisponible");
+  const id = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+  await dbRef.collection("reservations").doc(id).set({ ...b, spotId: b.spotId ?? "", userId: cloud.userId, status: "en_attente", reponse: "", createdAt: Date.now() });
+  log("resa:envoyee", id);
+  return id;
+}
+
+/** Suit l'état d'une réservation (confirmée, impossible…). */
+export function watchBooking(id: string, cb: (b: Booking | null) => void): () => void {
+  if (!dbRef) return () => {};
+  return dbRef.collection("reservations").doc(id).onSnapshot((snap) => cb(snap.exists ? toBooking(snap.id, snap.data() ?? {}) : null), () => cb(null));
+}
+
+export async function answerBooking(id: string, status: BookingStatus, reponse: string) {
+  await dbRef?.collection("reservations").doc(id).update({ status, reponse: reponse.slice(0, 400), updatedAt: Date.now() });
 }
 
 /* ---------- Récits des rues (écrits une fois par l'IA, partagés ensuite) ---------- */

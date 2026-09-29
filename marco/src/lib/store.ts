@@ -16,6 +16,17 @@ export interface SavedPlan {
   stops: { spotId: string; time: string }[];
 }
 
+export interface MyBooking {
+  id: string;
+  place: string;
+  spotId?: string;
+  date: string;
+  time: string;
+  people: number;
+  status: "en_attente" | "confirmee" | "impossible";
+  reponse?: string;
+}
+
 interface State {
   profile: Profile;
   saved: string[];
@@ -24,6 +35,8 @@ interface State {
   streetsRead: string[];
   /** ce que Marco a retenu de l'utilisateur au fil des conversations (visible et supprimable dans le profil) */
   memory: string[];
+  /** réservations confiées à Marco (le suivi détaillé est dans la base) */
+  bookings: MyBooking[];
   waitlist?: string;
   updatedAt?: number;
 }
@@ -36,6 +49,7 @@ const DEFAULT: State = {
   plans: [],
   streetsRead: [],
   memory: [],
+  bookings: [],
 };
 
 function load(): State {
@@ -128,4 +142,14 @@ export function remember(notes: string[]) {
 
 export function forget(note?: string) {
   setState((s) => ({ ...s, memory: note === undefined ? [] : (s.memory ?? []).filter((m) => m !== note) }));
+}
+
+export function addBooking(b: MyBooking) {
+  setState((s) => ({ ...s, bookings: [b, ...(s.bookings ?? []).filter((x) => x.id !== b.id)].slice(0, 30) }));
+}
+
+export function updateBooking(id: string, patch: Partial<MyBooking>) {
+  const cur = (state.bookings ?? []).find((b) => b.id === id);
+  if (!cur || Object.entries(patch).every(([k, v]) => cur[k as keyof MyBooking] === v)) return;
+  setState((s) => ({ ...s, bookings: (s.bookings ?? []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }));
 }

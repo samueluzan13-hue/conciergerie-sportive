@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { BottomNav } from "./components/BottomNav";
 import { MarcoLogo } from "./components/MarcoLogo";
 import { SpotSheetProvider } from "./components/SpotSheet";
@@ -36,10 +36,13 @@ function DesktopAside() {
   );
 }
 
+// La version aperçu (page unique) navigue en mémoire, sans modifier l'URL.
+const Router = import.meta.env.VITE_PREVIEW ? MemoryRouter : BrowserRouter;
+
 export default function App() {
   const onboarded = useStore((s) => s.profile.onboarded);
   return (
-    <BrowserRouter>
+    <Router>
       <ScrollTop />
       <div className="shell">
         <DesktopAside />
@@ -68,6 +71,6 @@ export default function App() {
           </SpotSheetProvider>
         </div>
       </div>
-    </BrowserRouter>
+    </Router>
   );
 }

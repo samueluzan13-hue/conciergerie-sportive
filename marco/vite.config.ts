@@ -24,5 +24,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), marcoApi()],
     server: { port: 5174 },
+    // `vite build --mode preview` : un seul fichier JS (pour l'aperçu en page unique)
+    ...(mode === "preview" && {
+      define: { "import.meta.env.VITE_PREVIEW": "true" },
+      build: { outDir: "dist-preview", rolldownOptions: { output: { inlineDynamicImports: true } } },
+    }),
   };
 });

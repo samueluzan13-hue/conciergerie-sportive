@@ -30,6 +30,11 @@ Ce que tu fais aussi :
 7. ACTIVITÉS : sport (salles d'escalade, padel, boxe, piscines, yoga, running, squash, vélo…), art (ateliers de peinture, céramique, poterie, dessin, sculpture, gravure, cours d'aquarelle…), cuisine, dégustation, bateau, visites insolites, musées de niche, famille. Donne des noms précis de clubs, ateliers et salles dans l'arrondissement demandé. Les activités de la sélection ont un bouton de réservation.
 8. Pour réserver une table ou une activité de la sélection, le bouton « Réserver » de chaque fiche mène directement au site officiel du lieu. Pour les autres lieux, conseille de réserver sur leur site officiel ou par téléphone.
 
+9. RELANCES : termine CHAQUE réponse par une ligne à part : [[suggestions:relance 1|relance 2|relance 3]] — 3 suites courtes (40 caractères max), écrites comme si l'utilisateur les tapait, qui prolongent vraiment la conversation (ex. « Et pour boire un verre après ? », « Moins cher ? », « Fais-moi le plan de la soirée »). L'app les affiche en boutons : ne les écris pas ailleurs.
+10. MÉMOIRE : quand l'utilisateur te dit une information durable sur lui (régime ou allergie, budget habituel, enfants, quartier où il vit ou dort, dates de séjour, goûts marqués, mobilité), ajoute un marqueur [[memo:phrase courte à la 3e personne]] (ex. [[memo:Mange casher]], [[memo:Voyage avec 2 enfants]]). Seulement ce qu'il affirme de lui-même, jamais une simple recherche ponctuelle. Tu reçois plus bas ce que tu sais déjà : utilise-le naturellement (sans le réciter) et ne le re-mémorise pas.
+11. PLANS : quand tu proposes un programme horodaté dont les étapes sont des lieux de la sélection, ajoute aussi [[plan:Titre court|HH:MM id|HH:MM id|…]] (ids de la sélection uniquement) : l'app propose de l'enregistrer dans son profil.
+12. CONTEXTE : tiens compte du jour et de l'heure donnés plus bas (ce qui est ouvert maintenant, « ce soir », le week-end, la saison) et du quartier de l'utilisateur.
+
 Format : réponses courtes et scannables pour un écran de téléphone, en français (ou dans la langue de l'utilisateur). Markdown léger : **gras**, listes à tirets, titres ###. Pas de tableaux. Pour l'instant tu couvres Paris ; pour une autre ville, dis avec humour que Marco y arrive bientôt, tout en donnant un conseil utile.
 
 Sélection Marco (adresses vérifiées de l'app, à utiliser en priorité quand elles correspondent à la demande) :
@@ -45,7 +50,16 @@ Rues déjà documentées dans l'app (tu peux parler de toute autre rue de Paris 
 ${streets}`;
 }
 
-export function profileNote(p?: { name?: string; quartier?: string; moods?: string[] }) {
+export function profileNote(p?: { name?: string; quartier?: string; moods?: string[]; memory?: string[] }) {
   if (!p) return "";
-  return `Profil de l'utilisateur : prénom ${p.name || "inconnu"}, habite/séjourne vers ${p.quartier || "?"}, goûts : ${(p.moods ?? []).join(", ") || "non précisés"}. Privilégie les adresses proches de son quartier quand c'est pertinent.`;
+  const memory = (p.memory ?? []).filter((m) => typeof m === "string").slice(0, 20);
+  return `Profil de l'utilisateur : prénom ${p.name || "inconnu"}, habite/séjourne vers ${p.quartier || "?"}, goûts : ${(p.moods ?? []).join(", ") || "non précisés"}. Privilégie les adresses proches de son quartier quand c'est pertinent.${
+    memory.length ? `\nCe que tu sais déjà de lui (retenu lors de conversations précédentes) :\n${memory.map((m) => `- ${m.slice(0, 120)}`).join("\n")}` : ""
+  }`;
+}
+
+/** Jour et heure à Paris, pour que Marco sache ce qui est ouvert « maintenant ». */
+export function nowNote(d = new Date()) {
+  const f = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return `Nous sommes le ${f.format(d)} (heure de Paris).`;
 }

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Spot as SpotT } from "../data/spots";
 import { bookingKind, CATEGORY_LABEL, MOOD_LABEL, spotById, usuallyNoBooking, type Spot } from "../data/spots";
 import { pushHistory } from "../lib/store";
@@ -65,6 +66,7 @@ function PhotoEditor({ spot }: { spot: SpotT }) {
 
 export function SpotSheetProvider({ children }: { children: ReactNode }) {
   const [id, setId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const spot = id ? spotById(id) : undefined;
   const book = spot ? bookingKind(spot) : undefined;
 
@@ -120,6 +122,15 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
                 <Icon name="pin" size={18} /> Y aller
               </a>
             </div>
+            <button
+              className="btn btn-soft btn-block ask-marco"
+              onClick={() => {
+                setId(null);
+                navigate(`/marco?q=${encodeURIComponent(`Parle-moi de ${spot.name} : ce qu'il faut savoir avant d'y aller, et quoi faire juste autour`)}&ia=1`);
+              }}
+            >
+              <Icon name="sparkles" size={18} /> Demander à Marco
+            </button>
             {book && (
               <p className="muted tiny center">
                 {usuallyNoBooking(spot)

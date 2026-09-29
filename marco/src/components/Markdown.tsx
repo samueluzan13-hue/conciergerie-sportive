@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { spotById } from "../data/spots";
+import { parseReply } from "../lib/meta";
 import { useSpotSheet } from "./SpotSheet";
 
 function SpotChip({ id }: { id: string }) {
@@ -53,7 +54,8 @@ function inline(text: string): ReactNode[] {
 
 /** Mini rendu Markdown pour les réponses de Marco (titres, gras, listes, fiches lieux). */
 export function Markdown({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n{2,}/);
+  // les marqueurs d'action de l'IA (relances, mémoire, plan) ne s'affichent jamais dans le texte
+  const blocks = parseReply(text).body.split(/\n{2,}/);
   return (
     <>
       {blocks.map((block, i) => {

@@ -1,6 +1,6 @@
 import { aiPermission, getSample, requestAi } from "./cloud";
 import { log } from "./diag";
-import { marcoInstructions, profileNote } from "./prompt";
+import { marcoInstructions, nowNote, profileNote } from "./prompt";
 import { getState } from "./store";
 
 export interface ChatMessage {
@@ -46,17 +46,18 @@ export async function checkAi(): Promise<boolean> {
  */
 export async function askMarco(
   messages: ChatMessage[],
-  opts: { onText?: (text: string) => void; deep?: boolean; alreadyShown?: string } = {},
+  opts: { onText?: (text: string) => void; deep?: boolean; alreadyShown?: string; hint?: string } = {},
 ): Promise<string | null> {
   const b = await detect();
-  const { profile } = getState();
+  const st = getState();
+  const profile = { ...st.profile, memory: st.memory ?? [] };
 
   if (b === "server") {
     try {
       const r = await fetch("/api/marco", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages, profile }),
+        body: JSON.stringify({ messages, profile, hint: opts.hint }),
       });
       if (!r.ok) return null;
       const data = await r.json();
@@ -77,11 +78,11 @@ export async function askMarco(
       issue = "denied";
       return null;
     }
-    const intro = `${marcoInstructions()}\n\n${profileNote(profile)}\nDate du jour : ${new Date().toLocaleDateString("fr-FR")}.\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
+    const intro = `${marcoInstructions()}\n\n${profileNote(profile)}\n${nowNote()}\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
       opts.alreadyShown
         ? `\n\nL'app vient déjà d'afficher cette première sélection à l'utilisateur :\n${opts.alreadyShown}\nNe la répète pas : complète-la (un plan concret, des conseils, d'autres idées), en restant bref.`
         : ""
-    }`;
+    }${opts.hint ? `\n\n${opts.hint}` : ""}`;
     // Les consignes sont un premier tour "user" que l'on garde toujours ; on limite l'historique.
     const turns = [{ role: "user" as const, content: intro }, ...messages.slice(-12)];
     // Délais maximum : si l'IA ne commence pas à répondre (autorisation en attente, réseau…), on abandonne

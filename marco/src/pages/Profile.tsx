@@ -5,10 +5,11 @@ import { SpotCard, SpotRow } from "../components/SpotCard";
 import { MOOD_LABEL, QUARTIERS, spotById, type Mood } from "../data/spots";
 import { STREETS } from "../data/streets";
 import { useCloud } from "../lib/cloud";
-import { setState, updateProfile, useStore } from "../lib/store";
+import { forget, setState, updateProfile, useStore } from "../lib/store";
 
 export function Profile() {
   const { profile, saved, history, plans, streetsRead } = useStore((s) => s);
+  const memory = useStore((s) => s.memory ?? []);
   const cloud = useCloud();
   const [editing, setEditing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -64,6 +65,25 @@ export function Profile() {
             {QUARTIERS.map((q) => <option key={q.name}>{q.name}</option>)}
           </select>
         </label>
+      </section>
+
+      <section>
+        <div className="section-head">
+          <h2 className="serif section-title"><Icon name="sparkles" size={16} /> Ce que Marco sait de toi</h2>
+          {memory.length > 0 && <button className="link tiny" onClick={() => forget()}>Tout effacer</button>}
+        </div>
+        {memory.length ? (
+          <ul className="memory-list">
+            {memory.map((m) => (
+              <li key={m}>
+                <span className="small">{m}</span>
+                <button className="icon-btn small" aria-label={`Oublier : ${m}`} onClick={() => forget(m)}><Icon name="close" size={14} /></button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted small">Rien pour l'instant. Quand tu dis à Marco quelque chose sur toi (un régime, des enfants, ton budget…), il le retient ici pour mieux te conseiller. Tu peux tout effacer quand tu veux.</p>
+        )}
       </section>
 
       <section>
@@ -136,7 +156,7 @@ export function Profile() {
             <button
               className="btn btn-danger grow"
               onClick={() => {
-                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [] }));
+                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [], memory: [] }));
                 setConfirmReset(false);
               }}
             >

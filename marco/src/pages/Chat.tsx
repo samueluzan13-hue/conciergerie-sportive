@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
@@ -8,7 +8,8 @@ import { aiIssue, askMarco, checkAi, type ChatMessage } from "../lib/ai";
 import { aiPermission, requestAi } from "../lib/cloud";
 import { log } from "../lib/diag";
 import { isGenericReply, lastLocalWasStrong, localReply } from "../lib/localBrain";
-import { useStore } from "../lib/store";
+import { parseReply } from "../lib/meta";
+import { remember, savePlan, useStore } from "../lib/store";
 
 const QUICK = [
   "J'ai 3 heures à Paris",
@@ -63,7 +64,9 @@ export function Chat() {
   // Sur téléphone, on masque la barre du bas pendant la saisie (le clavier prend la place).
   useEffect(() => () => document.body.classList.remove("typing"), []);
 
-  const send = async (text: string) => {
+  const [savedPlan, setSavedPlan] = useState<number | null>(null);
+
+  const send = async (text: string, opts: { aiOnly?: boolean } = {}) => {
     const t = text.trim();
     if (!t || busy) return;
     const next: ChatMessage[] = [...messages, { role: "user", content: t }];
@@ -75,8 +78,9 @@ export function Chat() {
     // 1. La base d'adresses de Marco répond tout de suite quand elle a de quoi répondre précisément.
     //    Sinon (rien dans l'arrondissement demandé, question hors base), on laisse l'IA répondre directement.
     const local = localReply(t);
-    const strong = lastLocalWasStrong() && !isGenericReply(local);
     const aiOn = await checkAi();
+    // une relance (bouton) dépend de la conversation : seule l'IA sait y répondre
+    const strong = lastLocalWasStrong() && !isGenericReply(local) && !(opts.aiOnly && aiOn);
     setAi(aiOn);
     const base: ChatMessage[] = strong ? [...next, { role: "assistant", content: local }] : next;
     if (strong) setMessages(base);
@@ -89,6 +93,11 @@ export function Chat() {
     } catch (e) {
       log("chat:error", e);
     }
+    if (reply) {
+      const memos = parseReply(reply).memos;
+      remember(memos);
+      if (memos.length) log("chat:memo", memos.length);
+    }
     if (aiIssue() === "denied") setPerm("denied");
     else aiPermission().then(setPerm);
     setMessages(reply ? [...base, { role: "assistant", content: reply }] : strong ? base : [...base, { role: "assistant", content: local }]);
@@ -99,10 +108,13 @@ export function Chat() {
   useEffect(() => {
     const q = params.get("q");
     if (q) {
+      const aiOnly = params.get("ia") === "1";
       setParams({}, { replace: true });
-      send(q);
+      send(q, { aiOnly });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const lastAi = !busy && messages.length > 0 && messages[messages.length - 1].role === "assistant" ? messages.length - 1 : -1;
 
   return (
     <div className="page chat-page">
@@ -148,16 +160,50 @@ export function Chat() {
           </div>
         )}
 
-        {messages.map((m, i) =>
-          m.role === "user" ? (
-            <div key={i} className="bubble-user">{m.content}</div>
-          ) : (
-            <div key={i} className="bubble-row">
-              <MarcoLogo size={30} />
-              <div className="bubble-ai"><Markdown text={m.content} /></div>
-            </div>
-          ),
-        )}
+        {messages.map((m, i) => {
+          if (m.role === "user") return <div key={i} className="bubble-user">{m.content}</div>;
+          const meta = parseReply(m.content);
+          return (
+            <Fragment key={i}>
+              <div className="bubble-row">
+                <MarcoLogo size={30} />
+                <div className="bubble-ai">
+                  <Markdown text={m.content} />
+                  {meta.memos.length > 0 && (
+                    <p className="memo-note tiny">
+                      <Icon name="bookmark" size={13} /> Marco retient : {meta.memos.join(" · ")} <Link to="/profil" className="link">Gérer</Link>
+                    </p>
+                  )}
+                </div>
+              </div>
+              {i === lastAi && (
+                <div className="follow-ups">
+                  {meta.plan && (
+                    <button
+                      className="chip chip-plan"
+                      disabled={savedPlan === i}
+                      onClick={() => {
+                        savePlan({ id: `ia-${Date.now()}`, title: meta.plan!.title, createdAt: Date.now(), stops: meta.plan!.stops });
+                        setSavedPlan(i);
+                        log("chat:plan", meta.plan!.stops.length);
+                      }}
+                    >
+                      <Icon name={savedPlan === i ? "check" : "calendar"} size={14} /> {savedPlan === i ? "Plan enregistré" : "Enregistrer ce plan"}
+                    </button>
+                  )}
+                  {meta.suggestions.map((q) => (
+                    <button key={q} className="chip" onClick={() => send(q, { aiOnly: true })}>{q}</button>
+                  ))}
+                  {ai && (
+                    <button className="chip chip-ghost" onClick={() => send("Propose-moi d'autres idées, différentes de celles-ci", { aiOnly: true })}>
+                      <Icon name="refresh" size={13} /> Autres idées
+                    </button>
+                  )}
+                </div>
+              )}
+            </Fragment>
+          );
+        })}
         {busy && (
           <div className="bubble-row">
             <MarcoLogo size={30} mood="happy" />

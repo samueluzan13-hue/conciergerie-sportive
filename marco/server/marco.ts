@@ -1,11 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { marcoInstructions, profileNote } from "../src/lib/prompt";
+import { marcoInstructions, nowNote, profileNote } from "../src/lib/prompt";
 
 const MODEL = "claude-opus-5-5";
 
 interface Body {
   messages?: { role: "user" | "assistant"; content: string }[];
-  profile?: { name?: string; quartier?: string; moods?: string[] };
+  profile?: { name?: string; quartier?: string; moods?: string[]; memory?: string[] };
+  hint?: string;
 }
 
 let client: Anthropic | null = null;
@@ -41,7 +42,7 @@ export async function handleMarco(method: string, raw: string): Promise<{ status
       output_config: { effort: "low" },
       system: [
         { type: "text", text: marcoInstructions(), cache_control: { type: "ephemeral" } },
-        { type: "text", text: `Date du jour : ${new Date().toLocaleDateString("fr-FR")}. ${profileNote(body.profile)}` },
+        { type: "text", text: `${nowNote()} ${profileNote(body.profile)}${typeof body.hint === "string" ? `\n\n${body.hint.slice(0, 300)}` : ""}` },
       ],
       messages,
     });

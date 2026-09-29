@@ -22,6 +22,8 @@ interface State {
   history: string[];
   plans: SavedPlan[];
   streetsRead: string[];
+  /** ce que Marco a retenu de l'utilisateur au fil des conversations (visible et supprimable dans le profil) */
+  memory: string[];
   waitlist?: string;
   updatedAt?: number;
 }
@@ -33,6 +35,7 @@ const DEFAULT: State = {
   history: [],
   plans: [],
   streetsRead: [],
+  memory: [],
 };
 
 function load(): State {
@@ -112,4 +115,17 @@ export function savePlan(plan: SavedPlan) {
 
 export function updateProfile(p: Partial<Profile>) {
   setState((s) => ({ ...s, profile: { ...s.profile, ...p } }));
+}
+
+export function remember(notes: string[]) {
+  if (!notes.length) return;
+  setState((s) => {
+    const memory = [...(s.memory ?? [])];
+    for (const n of notes) if (!memory.some((m) => m.toLowerCase() === n.toLowerCase())) memory.unshift(n);
+    return { ...s, memory: memory.slice(0, 20) };
+  });
+}
+
+export function forget(note?: string) {
+  setState((s) => ({ ...s, memory: note === undefined ? [] : (s.memory ?? []).filter((m) => m !== note) }));
 }

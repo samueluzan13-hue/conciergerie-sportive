@@ -1,9 +1,13 @@
-import { lazy, Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { BottomNav } from "./components/BottomNav";
 import { MarcoLogo } from "./components/MarcoLogo";
 import { SpotSheetProvider } from "./components/SpotSheet";
-import { useStore } from "./lib/store";
+import { useCloud } from "./lib/cloud";
+import { connectCloud, useStore } from "./lib/store";
+import { Admin } from "./pages/Admin";
+import { MapPage } from "./pages/MapPage";
+import { Propose } from "./pages/Propose";
 import { Chat } from "./pages/Chat";
 import { Explorer } from "./pages/Explorer";
 import { Home } from "./pages/Home";
@@ -13,7 +17,6 @@ import { Profile } from "./pages/Profile";
 import { Streets } from "./pages/Streets";
 import { Voyages } from "./pages/Voyages";
 
-const MapPage = lazy(() => import("./pages/MapPage").then((m) => ({ default: m.MapPage })));
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -41,6 +44,9 @@ const Router = import.meta.env.VITE_PREVIEW ? MemoryRouter : BrowserRouter;
 
 export default function App() {
   const onboarded = useStore((s) => s.profile.onboarded);
+  // Quand les lieux / rues arrivent de la base, on redessine les écrans avec les nouvelles données.
+  const { version } = useCloud();
+  useEffect(() => connectCloud(), []);
   return (
     <Router>
       <ScrollTop />
@@ -50,16 +56,18 @@ export default function App() {
           <SpotSheetProvider>
             {onboarded ? (
               <>
-                <main className="content">
+                <main className="content" key={version}>
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/explorer" element={<Explorer />} />
                     <Route path="/marco" element={<Chat />} />
-                    <Route path="/carte" element={<Suspense fallback={<div className="page muted">Chargement de la carte…</div>}><MapPage /></Suspense>} />
+                    <Route path="/carte" element={<MapPage />} />
                     <Route path="/profil" element={<Profile />} />
                     <Route path="/planner" element={<Planner />} />
                     <Route path="/rues" element={<Streets />} />
                     <Route path="/voyages" element={<Voyages />} />
+                    <Route path="/proposer" element={<Propose />} />
+                    <Route path="/base" element={<Admin />} />
                     <Route path="*" element={<Home />} />
                   </Routes>
                 </main>

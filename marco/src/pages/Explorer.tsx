@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { SpotCard } from "../components/SpotCard";
+import { Link } from "react-router-dom";
+import { useCloud } from "../lib/cloud";
 import { CATEGORY_LABEL, MOOD_LABEL, SPOTS, type Category, type Mood } from "../data/spots";
 
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 export function Explorer() {
   const [params, setParams] = useSearchParams();
@@ -13,6 +15,7 @@ export function Explorer() {
   const [cat, setCat] = useState<Category | "all">("all");
   const [hiddenOnly, setHiddenOnly] = useState(false);
   const mood = params.get("mood") as Mood | null;
+  const cloud = useCloud();
 
   const results = useMemo(() => {
     const q = norm(query);
@@ -62,6 +65,7 @@ export function Explorer() {
         )}
       </div>
 
+      <p className="tiny muted">{results.length} adresse{results.length > 1 ? "s" : ""}</p>
       {results.length ? (
         <div className="grid-2">
           {results.map((s) => <SpotCard key={s.id} spot={s} />)}
@@ -73,6 +77,13 @@ export function Explorer() {
             <Icon name="sparkles" size={18} /> Demander à Marco
           </button>
         </div>
+      )}
+      {cloud.db && (
+        <Link to="/proposer" className="propose-card">
+          <Icon name="heart" size={20} />
+          <div className="grow"><strong>Il manque une adresse ?</strong><p className="small muted">Propose-la, on l'ajoute à la sélection.</p></div>
+          <Icon name="arrowRight" size={18} />
+        </Link>
       )}
     </div>
   );

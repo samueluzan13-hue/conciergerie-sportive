@@ -1,0 +1,226 @@
+// Base de données de Marco.
+// Dans l'aperçu claude.ai, la page reçoit une base (capacité `db`), l'identité du visiteur (`user`)
+// et l'IA (`sample`). Ailleurs (site classique), tout ça est absent et l'app utilise ses données intégrées.
+import { useEffect, useState } from "react";
+import { SPOTS, type Category, type Mood, type Spot } from "../data/spots";
+import { STREETS, type StreetStory } from "../data/streets";
+
+/* ---------- Types minimaux des capacités (voir la doc du runtime) ---------- */
+interface DocSnap { id: string; exists: boolean; data(): Record<string, unknown> | undefined }
+interface QuerySnap { docs: DocSnap[] }
+interface DocRef {
+  get(): Promise<DocSnap>;
+  set(d: Record<string, unknown>): Promise<void>;
+  delete(): Promise<void>;
+  onSnapshot(next: (s: DocSnap) => void, err?: (e: { code: string }) => void): () => void;
+}
+interface ColRef {
+  doc(id?: string): DocRef;
+  orderBy(field: string, dir?: "asc" | "desc"): ColRef;
+  onSnapshot(next: (s: QuerySnap) => void, err?: (e: { code: string }) => void): () => void;
+}
+interface Db { doc(p: string): DocRef; collection(p: string): ColRef }
+interface User { id(): Promise<string | null>; canEdit(): Promise<boolean>; can(n: string): Promise<boolean | null> }
+export interface SampleFn {
+  (input: string | { role: "user" | "assistant"; content: string }[], opts?: { onText?: (e: { text: string }) => void; modelTier?: string; cache?: boolean }): Promise<{ text: string }>;
+}
+declare global {
+  interface Window { claude?: { use(name: string): Promise<unknown> } }
+}
+
+const use = <T,>(name: string): Promise<T | null> =>
+  window.claude?.use ? (window.claude.use(name) as Promise<T | null>).catch(() => null) : Promise.resolve(null);
+
+/* ---------- État de la connexion ---------- */
+export interface CloudState {
+  /** base disponible dans cette vue */
+  db: boolean;
+  /** données chargées depuis la base (sinon : données intégrées) */
+  fromDb: boolean;
+  isAdmin: boolean;
+  canWrite: boolean;
+  userId: string | null;
+  /** augmente à chaque changement des lieux / rues */
+  version: number;
+  suggestions: Suggestion[];
+}
+
+export interface Suggestion {
+  id: string;
+  name: string;
+  address: string;
+  quartier: string;
+  why: string;
+  createdAt: number;
+}
+
+let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [] };
+const listeners = new Set<() => void>();
+const emit = (patch: Partial<CloudState>) => {
+  cloud = { ...cloud, ...patch };
+  listeners.forEach((l) => l());
+};
+
+export function useCloud() {
+  const [s, set] = useState(cloud);
+  useEffect(() => {
+    const l = () => set(cloud);
+    listeners.add(l);
+    set(cloud);
+    return () => void listeners.delete(l);
+  }, []);
+  return s;
+}
+
+let dbRef: Db | null = null;
+
+/* ---------- Validation (les données partagées ne sont jamais fiables) ---------- */
+const CATS: Category[] = ["resto", "bar", "cafe", "culture", "nature", "insolite"];
+const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
+const num = (v: unknown, d = 0) => (typeof v === "number" && isFinite(v) ? v : d);
+const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, Math.round(n)));
+
+export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
+  const name = str(d.name, 120);
+  const category = CATS.includes(d.category as Category) ? (d.category as Category) : null;
+  const lat = num(d.lat), lng = num(d.lng);
+  if (!name || !category || !lat || !lng) return null;
+  return {
+    id,
+    name,
+    category,
+    quartier: str(d.quartier, 80),
+    arrondissement: clamp(num(d.arrondissement, 1), 1, 20),
+    address: str(d.address, 200),
+    lat, lng,
+    price: clamp(num(d.price, 2), 1, 3) as Spot["price"],
+    hidden: clamp(num(d.hidden, 2), 1, 3) as Spot["hidden"],
+    moods: Array.isArray(d.moods) ? (d.moods.filter((m) => typeof m === "string") as Mood[]) : [],
+    pitch: str(d.pitch, 600),
+    tip: str(d.tip, 600),
+    duration: clamp(num(d.duration, 60), 10, 300),
+    bookable: d.bookable === "table" || d.bookable === "activite" ? d.bookable : undefined,
+  };
+}
+
+export function toStreet(id: string, d: Record<string, unknown>): StreetStory | null {
+  const name = str(d.name, 120);
+  const fait = (d.fait ?? {}) as Record<string, unknown>;
+  if (!name || !str(d.histoire)) return null;
+  return {
+    id,
+    name,
+    aliases: Array.isArray(d.aliases) ? d.aliases.filter((a) => typeof a === "string").slice(0, 10) : [],
+    arrondissement: str(d.arrondissement, 40),
+    lat: num(d.lat, 48.8566), lng: num(d.lng, 2.3522),
+    histoire: str(d.histoire),
+    fait: { annee: str(fait.annee, 20), texte: str(fait.texte) },
+    anecdote: str(d.anecdote),
+    aVoir: Array.isArray(d.aVoir) ? d.aVoir.filter((a) => typeof a === "string").slice(0, 6) : [],
+  };
+}
+
+const replace = <T,>(arr: T[], items: T[]) => arr.splice(0, arr.length, ...items);
+
+/* ---------- Démarrage ---------- */
+let started = false;
+export async function startCloud(onUserState: (state: Record<string, unknown> | null) => void) {
+  if (started) return;
+  started = true;
+  const [db, user] = await Promise.all([use<Db>("db"), use<User>("user")]);
+  if (!db) return;
+  dbRef = db;
+  const [userId, isAdmin, canWrite] = await Promise.all([
+    user?.id().catch(() => null) ?? null,
+    user?.canEdit().catch(() => false) ?? false,
+    user?.can("data.write").catch(() => null) ?? null,
+  ]);
+  emit({ db: true, userId, isAdmin, canWrite: canWrite ?? true });
+
+  db.collection("lieux").onSnapshot((snap) => {
+    const items = snap.docs.map((d) => toSpot(d.id, d.data() ?? {})).filter((x): x is Spot => !!x);
+    if (items.length) {
+      replace(SPOTS, items);
+      emit({ fromDb: true, version: cloud.version + 1 });
+    }
+  });
+  db.collection("rues").onSnapshot((snap) => {
+    const items = snap.docs.map((d) => toStreet(d.id, d.data() ?? {})).filter((x): x is StreetStory => !!x);
+    if (items.length) {
+      replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")));
+      emit({ fromDb: true, version: cloud.version + 1 });
+    }
+  });
+  if (isAdmin) {
+    db.collection("suggestions").onSnapshot((snap) => {
+      emit({
+        suggestions: snap.docs
+          .map((d) => {
+            const x = d.data() ?? {};
+            return { id: d.id, name: str(x.name, 120), address: str(x.address, 200), quartier: str(x.quartier, 80), why: str(x.why, 600), createdAt: num(x.createdAt) };
+          })
+          .filter((s) => s.name)
+          .sort((a, b) => b.createdAt - a.createdAt),
+      });
+    });
+  }
+
+  if (userId) {
+    try {
+      const snap = await db.doc(`data/users/${userId}/etat`).get();
+      onUserState(snap.exists ? snap.data() ?? null : null);
+    } catch {
+      onUserState(null);
+    }
+  }
+}
+
+/* ---------- Écritures ---------- */
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+let saving: Promise<void> = Promise.resolve();
+/** Sauvegarde (regroupée) des données personnelles de l'utilisateur. */
+export function saveUserState(state: Record<string, unknown>) {
+  if (!dbRef || !cloud.userId) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const ref = dbRef!.doc(`data/users/${cloud.userId}/etat`);
+    saving = saving.then(() => ref.set(JSON.parse(JSON.stringify(state))).catch(() => {}));
+  }, 900);
+}
+
+const slug = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || `id-${Date.now()}`;
+
+function strip<T extends { id: string }>(x: T) {
+  const { id: _id, ...rest } = x;
+  return JSON.parse(JSON.stringify(rest)) as Record<string, unknown>;
+}
+
+export async function saveSpot(spot: Spot) {
+  if (!dbRef) throw new Error("Base indisponible");
+  const id = spot.id || slug(spot.name);
+  await dbRef.collection("lieux").doc(id).set(strip({ ...spot, id }));
+  return id;
+}
+export async function deleteSpot(id: string) {
+  await dbRef?.collection("lieux").doc(id).delete();
+}
+export async function saveStreet(street: StreetStory) {
+  if (!dbRef) throw new Error("Base indisponible");
+  const id = street.id || slug(street.name);
+  await dbRef.collection("rues").doc(id).set(strip({ ...street, id }));
+  return id;
+}
+export async function deleteStreet(id: string) {
+  await dbRef?.collection("rues").doc(id).delete();
+}
+export async function sendSuggestion(s: Omit<Suggestion, "id" | "createdAt">) {
+  if (!dbRef) throw new Error("Base indisponible");
+  await dbRef.collection("suggestions").doc().set({ ...s, createdAt: Date.now() });
+}
+export async function deleteSuggestion(id: string) {
+  await dbRef?.collection("suggestions").doc(id).delete();
+}
+
+/* ---------- IA intégrée à l'aperçu ---------- */
+export const getSample = () => use<SampleFn>("sample");

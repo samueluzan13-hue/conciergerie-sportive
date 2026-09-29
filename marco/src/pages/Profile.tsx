@@ -4,11 +4,14 @@ import { Icon } from "../components/Icon";
 import { SpotCard, SpotRow } from "../components/SpotCard";
 import { MOOD_LABEL, QUARTIERS, spotById, type Mood } from "../data/spots";
 import { STREETS } from "../data/streets";
+import { useCloud } from "../lib/cloud";
 import { setState, updateProfile, useStore } from "../lib/store";
 
 export function Profile() {
   const { profile, saved, history, plans, streetsRead } = useStore((s) => s);
+  const cloud = useCloud();
   const [editing, setEditing] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [name, setName] = useState(profile.name);
   const savedSpots = saved.map(spotById).filter(Boolean);
   const historySpots = history.map(spotById).filter(Boolean);
@@ -110,16 +113,40 @@ export function Profile() {
         </section>
       )}
 
-      <button
-        className="btn-text danger"
-        onClick={() => {
-          if (confirm("Effacer ton profil et tes enregistrements sur cet appareil ?")) {
-            setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [] }));
-          }
-        }}
-      >
-        Réinitialiser mon profil
-      </button>
+      {cloud.isAdmin && (
+        <Link to="/base" className="propose-card">
+          <Icon name="settings" size={20} />
+          <div className="grow">
+            <strong>Gérer la base de données</strong>
+            <p className="small muted">Ajouter, modifier ou retirer des lieux et des rues, voir les propositions.</p>
+          </div>
+          <Icon name="arrowRight" size={18} />
+        </Link>
+      )}
+
+      <p className="tiny muted center">
+        {cloud.db && cloud.userId ? "Tes données sont sauvegardées sur ton compte." : "Tes données sont enregistrées sur cet appareil."}
+      </p>
+
+      {confirmReset ? (
+        <div className="confirm-box">
+          <p className="small">Effacer ton profil, tes favoris et tes plans ?</p>
+          <div className="row gap-8">
+            <button className="btn btn-ghost grow" onClick={() => setConfirmReset(false)}>Annuler</button>
+            <button
+              className="btn btn-danger grow"
+              onClick={() => {
+                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [] }));
+                setConfirmReset(false);
+              }}
+            >
+              Effacer
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn-text danger" onClick={() => setConfirmReset(true)}>Réinitialiser mon profil</button>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { distanceKm } from "./geo";
 import { generatePlan, type PlanInput } from "./planner";
 import { getState } from "./store";
 
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const has = (t: string, words: string[]) => words.some((w) => t.includes(w));
 
 export function streetMarkdown(s: StreetStory) {

@@ -45,6 +45,7 @@ export function Planner() {
   });
   const [plan, setPlan] = useState<Plan | null>(null);
   const [saved, setSaved] = useState(false);
+  const [shared, setShared] = useState<"" | "copied" | "manual">("");
 
   const set = <K extends keyof PlanInput>(k: K, v: PlanInput[K]) => setInput((x) => ({ ...x, [k]: v }));
   const build = () => {
@@ -116,17 +117,26 @@ export function Planner() {
             className="btn btn-ghost"
             onClick={async () => {
               try {
-                if (navigator.share) await navigator.share({ title: plan.title, text: shareText });
-                else await navigator.clipboard.writeText(shareText);
+                if (navigator.share && !import.meta.env.VITE_PREVIEW) {
+                  await navigator.share({ title: plan.title, text: shareText });
+                  return;
+                }
               } catch {
-                /* partage annulé */
+                /* partage refusé : on copie */
+              }
+              try {
+                await navigator.clipboard.writeText(shareText);
+                setShared("copied");
+              } catch {
+                setShared("manual");
               }
             }}
           >
-            <Icon name="share" size={18} /> Partager
+            <Icon name={shared === "copied" ? "check" : "share"} size={18} /> {shared === "copied" ? "Copié" : "Partager"}
           </button>
           <button className="btn btn-ghost" onClick={build}><Icon name="refresh" size={18} /> Autre plan</button>
         </div>
+        {shared === "manual" && <textarea id="share-text" className="input textarea" readOnly rows={5} value={shareText} onFocus={(e) => e.target.select()} />}
         <button className="btn btn-soft btn-block" onClick={() => navigate(`/marco?q=${encodeURIComponent(`Affine mon plan « ${plan.title} » : ${plan.stops.map((s) => `${s.start} ${s.spot.name}`).join(", ")}. `)}`)}>
           <Icon name="sparkles" size={18} /> Affiner avec Marco
         </button>

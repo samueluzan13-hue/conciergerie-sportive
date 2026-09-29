@@ -35,7 +35,7 @@ export function SaveButton({ id }: { id: string }) {
   );
 }
 
-export function SpotCard({ spot }: { spot: Spot }) {
+export function SpotCard({ spot, distance }: { spot: Spot; distance?: number }) {
   const open = useSpotSheet();
   return (
     <article className="spot-card" onClick={() => open(spot.id)}>
@@ -45,7 +45,7 @@ export function SpotCard({ spot }: { spot: Spot }) {
         <SaveButton id={spot.id} />
       </div>
       <h3>{spot.name}</h3>
-      <p className="muted small">{spot.quartier}</p>
+      <p className="muted small clamp-1">{spot.quartier}{distance !== undefined ? ` · ${distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1).replace(".", ",")} km`}` : ""}</p>
       <div className="row-between small">
         <Price level={spot.price} />
         <HiddenBadge level={spot.hidden} />

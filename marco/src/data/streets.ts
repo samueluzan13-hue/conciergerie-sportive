@@ -498,7 +498,7 @@ function normalize(s: string) {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[-']/g, " ")
     .replace(/\b(rue|avenue|av|boulevard|bd|place|de la|du|des|de|d|l|la|le)\b/g, " ")
     .replace(/\s+/g, " ")

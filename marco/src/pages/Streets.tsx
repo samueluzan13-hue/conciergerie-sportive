@@ -64,7 +64,7 @@ export function Streets() {
         role: "user",
         content: `Raconte-moi l'histoire de "${q}" à Paris, avec L'histoire, Le fait historique (daté) et L'anecdote. Si ce n'est pas une rue parisienne que tu connais, dis-le honnêtement.`,
       },
-    ]).then((r) => {
+    ], { deep: true, onText: (t) => !cancelled && (setAiStory(t), setLoading(false)) }).then((r) => {
       if (cancelled) return;
       setAiStory(r ?? "");
       setLoading(false);

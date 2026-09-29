@@ -30,6 +30,7 @@ export function Chat() {
   });
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [live, setLive] = useState("");
   const [ai, setAi] = useState<boolean | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +45,10 @@ export function Chat() {
       /* ignore */
     }
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, busy]);
+  }, [messages, busy, live]);
+
+  // Sur téléphone, on masque la barre du bas pendant la saisie (le clavier prend la place).
+  useEffect(() => () => document.body.classList.remove("typing"), []);
 
   const send = async (text: string) => {
     const t = text.trim();
@@ -53,9 +57,11 @@ export function Chat() {
     setMessages(next);
     setInput("");
     setBusy(true);
-    const reply = (await askMarco(next)) ?? localReply(t);
+    setLive("");
+    const reply = (await askMarco(next, { onText: setLive })) ?? localReply(t);
     if (!(await checkAi())) await new Promise((r) => setTimeout(r, 450)); // laisse le temps de voir Marco réfléchir
     setMessages([...next, { role: "assistant", content: reply }]);
+    setLive("");
     setBusy(false);
   };
 
@@ -74,7 +80,7 @@ export function Chat() {
         <div className="grow">
           <h1 className="serif">Marco</h1>
           <p className="tiny muted">
-            <span className={`dot ${ai ? "on" : ""}`} /> {ai === null ? "…" : ai ? "IA connectée · ton pote qui a tout fait" : "Mode local · base d'adresses Marco"}
+            <span className={`dot ${ai ? "on" : ""}`} /> {ai === null ? "Connexion…" : ai ? "En ligne · ton pote qui a tout fait" : "Mode hors-ligne · réponses depuis la base Marco"}
           </p>
         </div>
         {messages.length > 0 && (
@@ -112,7 +118,11 @@ export function Chat() {
         {busy && (
           <div className="bubble-row">
             <MarcoLogo size={30} mood="happy" />
-            <div className="bubble-ai typing"><span /><span /><span /></div>
+            {live ? (
+              <div className="bubble-ai"><Markdown text={live} /></div>
+            ) : (
+              <div className="bubble-ai typing-dots"><span /><span /><span /></div>
+            )}
           </div>
         )}
         <div ref={endRef} />
@@ -125,7 +135,16 @@ export function Chat() {
           send(input);
         }}
       >
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Écris à Marco…" aria-label="Message" />
+        <input
+          id="chat-message"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onFocus={() => document.body.classList.add("typing")}
+          onBlur={() => document.body.classList.remove("typing")}
+          placeholder="Écris à Marco…"
+          aria-label="Message"
+          enterKeyHint="send"
+        />
         <button className="btn-round" disabled={!input.trim() || busy} aria-label="Envoyer"><Icon name="send" size={18} /></button>
       </form>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Mood } from "../data/spots";
+import { saveUserState, startCloud } from "./cloud";
 
 export interface Profile {
   name: string;
@@ -22,6 +23,7 @@ interface State {
   plans: SavedPlan[];
   streetsRead: string[];
   waitlist?: string;
+  updatedAt?: number;
 }
 
 const KEY = "marco.state.v1";
@@ -50,14 +52,33 @@ export function getState() {
   return state;
 }
 
-export function setState(update: (s: State) => State) {
-  state = update(state);
+function commit(next: State, sync: boolean) {
+  state = next;
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
     /* ignore */
   }
+  if (sync) saveUserState(state as unknown as Record<string, unknown>);
   listeners.forEach((l) => l());
+}
+
+export function setState(update: (s: State) => State) {
+  commit({ ...update(state), updatedAt: Date.now() }, true);
+}
+
+/** Connecte la base : récupère les données de l'utilisateur sauvegardées sur son compte. */
+export function connectCloud() {
+  startCloud((remote) => {
+    if (remote && typeof remote === "object" && typeof remote.profile === "object") {
+      const r = { ...DEFAULT, ...(remote as Partial<State>) } as State;
+      if ((r.updatedAt ?? 0) >= (state.updatedAt ?? 0)) commit(r, false);
+      else saveUserState(state as unknown as Record<string, unknown>);
+    } else if (state.profile.onboarded) {
+      // première connexion : on envoie ce qui existe déjà sur l'appareil
+      saveUserState(state as unknown as Record<string, unknown>);
+    }
+  });
 }
 
 export function useStore<T>(select: (s: State) => T): T {

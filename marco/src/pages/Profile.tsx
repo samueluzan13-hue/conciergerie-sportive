@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { reservationStatus } from "../lib/autopilot";
 import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { SpotCard, SpotRow } from "../components/SpotCard";
@@ -15,12 +16,20 @@ export function Profile() {
   const cloud = useCloud();
   const memory = useStore((s) => s.memory ?? []);
   const bookings = useStore((s) => s.bookings ?? []);
+  // réservations du pilote automatique : on récupère leur état (confirmée, impossible…)
+  useEffect(() => {
+    bookings.filter((b) => b.server && b.code && b.status === "en_attente").forEach((b) =>
+      reservationStatus(b.id, b.code!).then((r) => {
+        if (r && (r.status === "confirmee" || r.status === "impossible")) updateBooking(b.id, { status: r.status, reponse: r.reponse || undefined, time: r.time });
+      }),
+    );
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const trips = useStore((s) => s.trips ?? []);
   const [openTrip, setOpenTrip] = useState<string | null>(null);
   const bookingIds = bookings.map((b) => b.id + b.status).join(",");
   // suivi en direct : l'équipe Marco confirme (ou non) dans la base
   useEffect(() => {
-    const offs = bookings.filter((b) => !b.callId).map((b) => watchBooking(b.id, (x) => x && updateBooking(b.id, { status: x.status, reponse: x.reponse || undefined })));
+    const offs = bookings.filter((b) => !b.callId && !b.server).map((b) => watchBooking(b.id, (x) => x && updateBooking(b.id, { status: x.status, reponse: x.reponse || undefined })));
     // appels de l'agent vocal encore en cours : on relève le résultat
     const calling = bookings.filter((b) => b.callId && b.status === "en_attente");
     const poll = () => calling.forEach((b) => getCall(b.callId!).then((r) => r && applyCall(b, r)));

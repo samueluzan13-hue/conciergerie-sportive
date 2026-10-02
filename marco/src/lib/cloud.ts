@@ -42,6 +42,8 @@ export interface CloudState {
   /** données chargées depuis la base (sinon : données intégrées) */
   fromDb: boolean;
   isAdmin: boolean;
+  /** numéro WhatsApp de l'équipe Marco, qui reçoit les demandes des clients sans accès à la base */
+  teamPhone: string;
   canWrite: boolean;
   userId: string | null;
   /** augmente à chaque changement des lieux / rues */
@@ -102,7 +104,7 @@ export interface Suggestion {
   createdAt: number;
 }
 
-let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [], bookings: [], visits: [] };
+let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [], bookings: [], visits: [], teamPhone: "" };
 const listeners = new Set<() => void>();
 const emit = (patch: Partial<CloudState>) => {
   cloud = { ...cloud, ...patch };
@@ -220,6 +222,10 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
     const items = snap.docs.map((d) => toSpot(d.id, d.data() ?? {})).filter((x): x is Spot => !!x);
     if (items.length && replace(SPOTS, items)) emit({ fromDb: true, version: cloud.version + 1 });
   }, (e) => log("db:lieux:error", e.code));
+  db.doc("config/equipe").onSnapshot((snap) => {
+    const phone = snap.exists ? str(snap.data()?.whatsapp, 20) : "";
+    emit({ teamPhone: phone });
+  }, () => {});
   db.collection("rues").onSnapshot((snap) => {
     const items = snap.docs.map((d) => toStreet(d.id, d.data() ?? {})).filter((x): x is StreetStory => !!x);
     if (items.length && replace(STREETS, items.sort((a, b) => a.name.localeCompare(b.name, "fr")))) emit({ fromDb: true, version: cloud.version + 1 });
@@ -352,6 +358,10 @@ export async function requestBooking(b: BookingInput): Promise<{ id: string; cod
   });
   log("resa:envoyee", id);
   return { id, code };
+}
+
+export async function setTeamPhone(whatsapp: string) {
+  await dbRef?.doc("config/equipe").set({ whatsapp: whatsapp.replace(/[^\d+]/g, "").slice(0, 20), updatedAt: Date.now() });
 }
 
 export async function markSmsSent(id: string) {

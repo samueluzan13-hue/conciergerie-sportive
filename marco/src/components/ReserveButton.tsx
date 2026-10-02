@@ -3,7 +3,9 @@ import { createPortal } from "react-dom";
 import { newCode, requestBooking, track, useCloud } from "../lib/cloud";
 import { log } from "../lib/diag";
 import { withUtm } from "../lib/partners";
+import { requestMessage, whatsappLink } from "../lib/sms";
 import { addBooking, useStore } from "../lib/store";
+import { autopilotConfig, submitReservation } from "../lib/autopilot";
 import { Icon } from "./Icon";
 import { Link } from "./Nav";
 
@@ -57,6 +59,7 @@ function ReserveSheet({ target: t, onClose }: { target: ReserveTarget; onClose: 
   const [state, setState] = useState<"form" | "sending" | "sent">("form");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState(true);
+  const [auto, setAuto] = useState(false);
   const valid = name.trim().length > 1 && /\d{6,}/.test(phone.replace(/\D/g, "")) && date >= today() && (hotel ? checkout > date : /^\d{2}:\d{2}$/.test(time));
 
   const submit = async () => {
@@ -69,6 +72,20 @@ function ReserveSheet({ target: t, onClose }: { target: ReserveTarget; onClose: 
     };
     let id = `l${Date.now().toString(36)}`;
     let c = newCode();
+    // site en ligne : le pilote automatique enregistre la demande, appelle le lieu et prévient le client par SMS
+    const ap = await autopilotConfig();
+    if (ap.enabled) {
+      try {
+        const r = await submitReservation(base);
+        addBooking({ id: r.id, place: t.place, spotId: t.spotId, date, time: base.time, people, status: "en_attente", code: r.code, checkout: base.checkout || undefined, server: true });
+        setAuto(r.auto);
+        setCode(r.code);
+        setState("sent");
+        return;
+      } catch (e) {
+        log("resa:serveur", String(e));
+      }
+    }
     try {
       if (!cloud.db || !cloud.userId || !cloud.canWrite) throw new Error("hors ligne");
       ({ id, code: c } = await requestBooking({ ...base, code: c }));
@@ -99,10 +116,22 @@ function ReserveSheet({ target: t, onClose }: { target: ReserveTarget; onClose: 
               <span className="tiny">Montre-le en arrivant{hotel ? " à la réception" : ""} : c'est lui qui prouve que tu viens de la part de Marco.</span>
             </div>
             {online ? (
-              <p className="small muted">L'équipe Marco réserve pour toi et te confirme ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>
+              <p className="small muted">
+                {auto ? "Marco appelle le lieu pour toi" : "L'équipe Marco réserve pour toi"} et te confirme par SMS, ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.
+              </p>
             ) : (
               <>
-                <p className="small muted">Termine en un geste : appelle ou réserve sur le site, et donne ton code Marco.</p>
+                {cloud.teamPhone ? (
+                  <>
+                    <p className="small muted">Dernière étape : envoie ta demande à l'équipe Marco, elle réserve pour toi et te confirme par message.</p>
+                    <a className="btn btn-primary btn-block" target="_blank" rel="noreferrer" href={whatsappLink(cloud.teamPhone, requestMessage({ place: t.place, address: t.address, date, time, people, name: name.trim(), phone: phone.trim(), note: note.trim(), code, kind: t.kind, checkout }))}>
+                      Envoyer ma demande à Marco (WhatsApp)
+                    </a>
+                    <p className="tiny muted">Ou fais-le toi-même :</p>
+                  </>
+                ) : (
+                  <p className="small muted">Termine en un geste : appelle ou réserve sur le site, et donne ton code Marco.</p>
+                )}
                 <div className="place-actions">
                   {t.phone && <a className="btn-mini primary" href={`tel:${t.phone.replace(/[^\d+]/g, "")}`} onClick={() => track({ placeKey: t.placeKey, place: t.place, city: t.city, action: "appel" })}><Icon name="phone" size={14} /> Appeler</a>}
                   {t.website && <a className="btn-mini" href={withUtm(t.website)} target="_blank" rel="noreferrer" onClick={() => track({ placeKey: t.placeKey, place: t.place, city: t.city, action: "site" })}>Site officiel</a>}

@@ -4,9 +4,10 @@ import { Icon } from "../components/Icon";
 import { CATEGORY_LABEL, MOOD_LABEL, QUARTIERS, SPOTS, spotById, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
 import { CITIES, type CityId } from "../data/cities";
-import { answerBooking, markSmsSent, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
+import { answerBooking, setTeamPhone, markSmsSent, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
-import { bookingSms, sendSms, smsConfig, smsLink, whatsappLink } from "../lib/sms";
+import { intlPhone, bookingSms, sendSms, smsConfig, smsLink, whatsappLink } from "../lib/sms";
+import { adminReservations, adminUpdate, asBooking, autopilotConfig, type ServerBooking } from "../lib/autopilot";
 import { ACTION_LABEL, partnerReport, partnerStats } from "../lib/partners";
 
 type Tab = "lieux" | "rues" | "propositions" | "reservations" | "partenaires";
@@ -267,17 +268,34 @@ function StreetForm({ initial, onDone }: { initial: StreetStory; onDone: () => v
   );
 }
 
+/** Le numéro WhatsApp où arrivent les demandes des clients qui n'ont pas accès à la base. */
+function TeamPhone() {
+  const cloud = useCloud();
+  const [v, setV] = useState(cloud.teamPhone);
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="card team-box">
+      <strong className="small">Ton WhatsApp pour recevoir les réservations</strong>
+      <span className="tiny muted">Les clients du lien partagé n'ont aucun accès à ta base : leur demande (lieu, date, personnes, nom, code Marco) t'arrive sur ce WhatsApp. Tu valides ici ou tu réponds directement.</span>
+      <div className="row gap-8">
+        <input className="input" type="tel" value={v} onChange={(e) => { setV(e.target.value); setOk(false); }} placeholder="+33 6 12 34 56 78" style={{ flex: 1 }} />
+        <button className="btn-mini primary" disabled={!/\d{8,}/.test(v.replace(/\D/g, ""))} onClick={() => setTeamPhone(intlPhone(v)).then(() => setOk(true))}>{ok ? "Enregistré ✓" : "Enregistrer"}</button>
+      </div>
+    </div>
+  );
+}
+
 const PERIODS: [number, string][] = [[30, "30 jours"], [90, "3 mois"], [365, "1 an"]];
 
 /** Ce que Marco apporte à chaque établissement : réservations (avec code client), couverts, appels, itinéraires, visites du site. */
-function Partners() {
+function Partners({ extra = [] }: { extra?: Booking[] }) {
   const cloud = useCloud();
   const [days, setDays] = useState(90);
   const [q, setQ] = useState("");
   const [report, setReport] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const since = Date.now() - days * 86400000;
-  const all = partnerStats(cloud.bookings, cloud.visits, since);
+  const all = partnerStats([...cloud.bookings, ...extra], cloud.visits, since);
   const list = all.filter((s) => !q || s.place.toLowerCase().includes(q.toLowerCase()));
   const total = all.reduce((a, s) => ({ leads: a.leads + s.leads, bookings: a.bookings + s.bookings, covers: a.covers + s.covers }), { leads: 0, bookings: 0, covers: 0 });
   return (
@@ -318,6 +336,80 @@ function Partners() {
   );
 }
 
+/** Site en ligne : réservations du pilote automatique, protégées par la clé admin (MARCO_ADMIN_TOKEN). */
+function ServerAdmin() {
+  const [key, setKey] = useState(() => {
+    try {
+      return localStorage.getItem("marco.adminKey") ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [list, setList] = useState<ServerBooking[] | null>(null);
+  const [err, setErr] = useState("");
+  const [tab, setTab] = useState<"resas" | "partenaires">("resas");
+  const load = async (k = key) => {
+    const l = await adminReservations(k);
+    if (!l) return setErr("Clé incorrecte ou service indisponible.");
+    setErr("");
+    setList(l.sort((a, b) => b.createdAt - a.createdAt));
+    try {
+      localStorage.setItem("marco.adminKey", k);
+    } catch {
+      /* ignore */
+    }
+  };
+  useEffect(() => {
+    if (key) load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const act = async (id: string, patch: Parameters<typeof adminUpdate>[2]) => {
+    await adminUpdate(key, id, patch);
+    load();
+  };
+  if (!list)
+    return (
+      <div className="card form">
+        <strong>Espace équipe Marco</strong>
+        <input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Clé admin" />
+        {err && <p className="error small">{err}</p>}
+        <button className="btn btn-primary" onClick={() => load()}>Entrer</button>
+      </div>
+    );
+  const label = { en_attente: "À traiter", appel: "Appel en cours", confirmee: "Confirmée", impossible: "Impossible" };
+  return (
+    <>
+      <div className="segmented">
+        <button className={tab === "resas" ? "on" : ""} onClick={() => setTab("resas")}>Réservations ({list.filter((b) => b.status === "en_attente").length})</button>
+        <button className={tab === "partenaires" ? "on" : ""} onClick={() => setTab("partenaires")}>Partenaires</button>
+      </div>
+      {tab === "partenaires" ? (
+        <Partners extra={list.map(asBooking)} />
+      ) : (
+        <div className="admin-list">
+          <button className="btn-mini" onClick={() => load()}><Icon name="refresh" size={14} /> Actualiser</button>
+          {!list.length && <p className="muted small">Aucune réservation pour l'instant.</p>}
+          {list.map((b) => (
+            <div key={b.id} className="admin-row col">
+              <div className="row gap-8" style={{ justifyContent: "space-between" }}>
+                <strong>{b.place}</strong>
+                <span className={`status status-${b.status === "appel" ? "en_attente" : b.status}`}>{label[b.status]}</span>
+              </div>
+              <span className="small">{b.date} à {b.time} · {b.people} pers. · {b.name} · {b.phone}</span>
+              <span className="small">Code : <strong className="code-inline">{b.code}</strong>{b.honored ? " · venu ✓" : ""}{b.smsAt ? " · SMS envoyé ✓" : ""}</span>
+              {b.note && <p className="small muted">« {b.note} »</p>}
+              <div className="row gap-8">
+                <button className="btn-mini primary" onClick={() => act(b.id, { status: "confirmee" })}>Confirmée</button>
+                <button className="btn-mini" onClick={() => act(b.id, { status: "impossible" })}>Impossible</button>
+                <button className={`btn-mini ${b.honored ? "primary" : ""}`} onClick={() => act(b.id, { honored: !b.honored })}>{b.honored ? "Venu ✓" : "Client venu"}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Admin() {
   const navigate = useNavigate();
   const cloud = useCloud();
@@ -327,6 +419,19 @@ export function Admin() {
   const [editStreet, setEditStreet] = useState<StreetStory | null>(null);
   const [filter, setFilter] = useState("");
 
+  const [server, setServer] = useState(false);
+  useEffect(() => {
+    autopilotConfig().then((c) => setServer(c.enabled));
+  }, []);
+  if (!cloud.db && server) {
+    return (
+      <div className="page">
+        <button className="back" onClick={() => navigate(-1)} aria-label="Retour"><Icon name="arrowLeft" size={20} /></button>
+        <h1 className="serif page-title">Espace équipe</h1>
+        <ServerAdmin />
+      </div>
+    );
+  }
   if (!cloud.db || !cloud.isAdmin) {
     return (
       <div className="page">
@@ -367,6 +472,7 @@ export function Admin() {
 
       {tab === "reservations" && (
         <div className="admin-list">
+          <TeamPhone />
           {cloud.bookings.length === 0 && <p className="muted small">Aucune demande. Elles arrivent ici quand un utilisateur confirme une réservation proposée par Marco dans le chat.</p>}
           {cloud.bookings.map((b) => <BookingRow key={b.id} b={b} />)}
         </div>

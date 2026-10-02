@@ -6,6 +6,7 @@ import { handleReserve } from "./server/reserve";
 import { handleVoice } from "./server/voice";
 import { handleTravel } from "./server/travel";
 import { handleSms } from "./server/sms";
+import { handleReservations } from "./server/autopilot";
 
 // En dev, expose /api/marco (même logique que la fonction serverless api/marco.ts).
 function marcoApi(): Plugin {
@@ -16,6 +17,15 @@ function marcoApi(): Plugin {
         let raw = "";
         for await (const chunk of req) raw += chunk;
         const { status, body } = await handleTravel(req.method ?? "GET", new URL(req.url ?? "/", "http://localhost").searchParams, raw);
+        res.statusCode = status;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(body));
+      });
+      server.middlewares.use("/api/reservations", async (req, res) => {
+        let raw = "";
+        for await (const chunk of req) raw += chunk;
+        const token = req.headers["x-marco-admin"];
+        const { status, body } = await handleReservations(req.method ?? "GET", new URL(req.url ?? "/", "http://localhost").searchParams, raw, typeof token === "string" ? token : undefined);
         res.statusCode = status;
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(body));

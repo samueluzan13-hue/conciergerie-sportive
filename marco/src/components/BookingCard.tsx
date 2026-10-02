@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { spotById } from "../data/spots";
 import { newCode, requestBooking, track, useCloud } from "../lib/cloud";
 import { withUtm } from "../lib/partners";
+import { autopilotConfig, submitReservation } from "../lib/autopilot";
+import { requestMessage, whatsappLink } from "../lib/sms";
 import { log } from "../lib/diag";
 import type { BookingDraft } from "../lib/meta";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
@@ -24,6 +26,7 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
   const [note, setNote] = useState("");
   const [state, setState] = useState<"form" | "sending" | "sent" | "error">("form");
   const [code, setCode] = useState("");
+  const [serverAuto, setServerAuto] = useState<boolean | null>(null);
   // l'agent vocal de Marco appelle lui-même le restaurant (site en ligne, si configuré)
   const [voice, setVoice] = useState(false);
   const [call, setCall] = useState<{ id: string; bookingId: string; scheduledFor?: string } | null>(null);
@@ -71,6 +74,19 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
         setState("error");
       }
       return;
+    }
+    const ap = await autopilotConfig();
+    if (ap.enabled) {
+      try {
+        const r = await submitReservation({ place: draft.place, placeKey: draft.spotId ? `spot:${draft.spotId}` : `nom:${draft.place.toLowerCase()}`, city: spot?.city ?? "paris", kind: "table", address: spot?.address ?? "", date, time, people, name: name.trim(), phone: phone.trim(), note: note.trim() });
+        addBooking({ id: r.id, place: draft.place, spotId: draft.spotId, date, time, people, status: "en_attente", code: r.code, server: true });
+        setCode(r.code);
+        setServerAuto(r.auto);
+        setState("sent");
+        return;
+      } catch (e) {
+        log("resa:serveur", String(e));
+      }
     }
     if (!online) {
       const c = newCode();
@@ -129,13 +145,24 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
         <p className="booking-title"><Icon name="check" size={16} /> {online ? "Demande envoyée à l'équipe Marco" : "Ta réservation Marco est prête"}</p>
         <p className="small">{draft.place} · {when} à {time} · {people} pers.</p>
         {code && <p className="voucher">Ton code Marco : <strong>{code}</strong><span className="tiny">Montre-le en arrivant</span></p>}
-        {!online && (
+        {!online && serverAuto === null && (
           <>
-            <p className="tiny muted">Dernière étape : réserve sur le site du lieu (ou appelle-le) et donne ton code Marco.</p>
-            <a className="btn btn-primary btn-block" href={withUtm(direct)} target="_blank" rel="noreferrer">Finaliser sur le site du lieu</a>
+            {cloud.teamPhone ? (
+              <>
+                <p className="tiny muted">Dernière étape : envoie ta demande à l'équipe Marco, elle réserve pour toi.</p>
+                <a className="btn btn-primary btn-block" target="_blank" rel="noreferrer" href={whatsappLink(cloud.teamPhone, requestMessage({ place: draft.place, address: spot?.address, date, time, people, name: name.trim(), phone: phone.trim(), note: note.trim(), code }))}>Envoyer ma demande à Marco (WhatsApp)</a>
+                <a className="link small" href={withUtm(direct)} target="_blank" rel="noreferrer">Ou réserver moi-même sur le site du lieu ›</a>
+              </>
+            ) : (
+              <>
+                <p className="tiny muted">Dernière étape : réserve sur le site du lieu (ou appelle-le) et donne ton code Marco.</p>
+                <a className="btn btn-primary btn-block" href={withUtm(direct)} target="_blank" rel="noreferrer">Finaliser sur le site du lieu</a>
+              </>
+            )}
           </>
         )}
-        {online && <p className="tiny muted">On réserve pour toi et tu reçois la confirmation ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>}
+        {serverAuto !== null && <p className="tiny muted">{serverAuto ? "Marco appelle le lieu pour toi" : "L'équipe Marco réserve pour toi"} : tu reçois un SMS dès que c'est confirmé.</p>}
+        {online && serverAuto === null && <p className="tiny muted">On réserve pour toi et tu reçois la confirmation ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>}
       </div>
     );
 

@@ -63,3 +63,17 @@ export async function sendSms(phone: string, body: string, adminKey: string): Pr
     return { ok: false, error: "Réseau indisponible" };
   }
 }
+
+/** La demande du client, envoyée sur le WhatsApp de l'équipe Marco (aucun accès à la base nécessaire). */
+export function requestMessage(r: { place: string; address?: string; date: string; time: string; people: number; name: string; phone: string; note?: string; code: string; kind?: string; checkout?: string }) {
+  const d = (x: string) => new Date(`${x}T12:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const when = r.kind === "hotel" && r.checkout ? `du ${d(r.date)} au ${d(r.checkout)}` : `le ${d(r.date)} à ${r.time.replace(":", "h")}`;
+  return [
+    `Bonjour Marco, je souhaite réserver :`,
+    `${r.place}${r.address ? ` (${r.address})` : ""}`,
+    `${when}, ${r.people} pers.`,
+    `Nom : ${r.name} · Tél : ${r.phone}`,
+    ...(r.note ? [`Précisions : ${r.note}`] : []),
+    `Code Marco : ${r.code}`,
+  ].join("\n");
+}

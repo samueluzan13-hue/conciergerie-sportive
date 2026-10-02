@@ -34,6 +34,8 @@ export interface MyBooking {
   code?: string;
   /** hôtel : date de départ */
   checkout?: string;
+  /** réservation gérée par le pilote automatique du site (suivie avec id + code) */
+  server?: boolean;
 }
 
 /** Vols et hébergements réservés dans Marco. */

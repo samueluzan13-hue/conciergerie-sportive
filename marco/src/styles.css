@@ -665,3 +665,4 @@ button.marco-card { text-align: left; width: 100%; }
 .code-inline { letter-spacing: 1px; color: var(--orange); }
 .sms-box { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: var(--sand); }
 .sms-box p { margin: 0; }
+.team-box { display: flex; flex-direction: column; gap: 6px; }

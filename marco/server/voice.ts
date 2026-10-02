@@ -113,21 +113,35 @@ function validate(x: Partial<CallRequest>): CallRequest {
   return r;
 }
 
-/** Numéro officiel du restaurant via Google Places, limité aux numéros français non surtaxés. */
-async function findPhone(place: string, address?: string): Promise<string | null> {
+/** Pays des villes de Marco : indicatif accepté (hors numéros surtaxés), fuseau, langue de l'appel. */
+export const CALL_COUNTRY: Record<string, { cc: RegExp; tz: string; lang: string; langName: string; voice: string; city: string; lat: number; lng: number }> = {
+  paris: { cc: /^\+33[1-79]\d{8}$/, tz: "Europe/Paris", lang: "fr", langName: "français", voice: "fr-FR-DeniseNeural", city: "Paris", lat: 48.8566, lng: 2.3522 },
+  madrid: { cc: /^\+34[6-9]\d{8}$/, tz: "Europe/Madrid", lang: "es", langName: "espagnol", voice: "es-ES-ElviraNeural", city: "Madrid", lat: 40.4168, lng: -3.7038 },
+  barcelone: { cc: /^\+34[6-9]\d{8}$/, tz: "Europe/Madrid", lang: "es", langName: "espagnol", voice: "es-ES-ElviraNeural", city: "Barcelona", lat: 41.387, lng: 2.17 },
+  londres: { cc: /^\+44(?!9)[1-8]\d{8,9}$/, tz: "Europe/London", lang: "en", langName: "anglais", voice: "en-GB-SoniaNeural", city: "London", lat: 51.5072, lng: -0.1276 },
+  lisbonne: { cc: /^\+351[29]\d{8}$/, tz: "Europe/Lisbon", lang: "pt", langName: "portugais", voice: "pt-PT-RaquelNeural", city: "Lisboa", lat: 38.7223, lng: -9.1393 },
+  rome: { cc: /^\+39(?!89)[03]\d{6,10}$/, tz: "Europe/Rome", lang: "it", langName: "italien", voice: "it-IT-ElsaNeural", city: "Roma", lat: 41.9028, lng: 12.4964 },
+  amsterdam: { cc: /^\+31(?!90)[1-9]\d{8}$/, tz: "Europe/Amsterdam", lang: "nl", langName: "néerlandais", voice: "nl-NL-ColetteNeural", city: "Amsterdam", lat: 52.3676, lng: 4.9041 },
+  "new-york": { cc: /^\+1(?!900)[2-9]\d{9}$/, tz: "America/New_York", lang: "en-US", langName: "anglais", voice: "en-US-JennyNeural", city: "New York", lat: 40.7128, lng: -74.006 },
+  berlin: { cc: /^\+49(?!900)[1-9]\d{6,11}$/, tz: "Europe/Berlin", lang: "de", langName: "allemand", voice: "de-DE-KatjaNeural", city: "Berlin", lat: 52.52, lng: 13.405 },
+};
+
+/** Numéro officiel du lieu via Google Places, limité au pays de la ville et aux numéros non surtaxés. */
+export async function findPhone(place: string, address?: string, cityId = "paris"): Promise<string | null> {
+  const c = CALL_COUNTRY[cityId] ?? CALL_COUNTRY.paris;
   const key = process.env.GOOGLE_MAPS_API_KEY;
   if (!key) return null;
   try {
     const find = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
-    find.search = new URLSearchParams({ input: `${place}, ${address ?? "Paris"}`, inputtype: "textquery", fields: "place_id", locationbias: "circle:15000@48.8566,2.3522", key }).toString();
+    find.search = new URLSearchParams({ input: `${place}, ${address ?? c.city}`, inputtype: "textquery", fields: "place_id", locationbias: `circle:15000@${c.lat},${c.lng}`, key }).toString();
     const placeId = ((await (await fetch(find)).json()) as { candidates?: { place_id: string }[] }).candidates?.[0]?.place_id;
     if (!placeId) return null;
     const details = new URL("https://maps.googleapis.com/maps/api/place/details/json");
     details.search = new URLSearchParams({ place_id: placeId, fields: "international_phone_number", key }).toString();
     const phone = ((await (await fetch(details)).json()) as { result?: { international_phone_number?: string } }).result?.international_phone_number;
     const e164 = phone?.replace(/[^\d+]/g, "");
-    // +33 1-7 et 9 : fixes, mobiles et box ; jamais 08 (numéros spéciaux, souvent surtaxés).
-    return e164 && /^\+33[1-79]\d{8}$/.test(e164) ? e164 : null;
+    // seulement les numéros du pays de la ville, jamais les numéros spéciaux souvent surtaxés
+    return e164 && c.cc.test(e164) ? e164 : null;
   } catch (err) {
     console.error("[voice] Places", err);
     return null;
@@ -135,9 +149,9 @@ async function findPhone(place: string, address?: string): Promise<string | null
 }
 
 /** On n'appelle un restaurant qu'entre 10 h et 22 h (heure de Paris) ; sinon l'appel est programmé au lendemain 10 h. */
-export function nextCallWindow(now = new Date()): string | undefined {
+export function nextCallWindow(now = new Date(), timeZone = "Europe/Paris"): string | undefined {
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", timeZoneName: "shortOffset" })
+    new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", timeZoneName: "shortOffset" })
       .formatToParts(now)
       .map((p) => [p.type, p.value]),
   );
@@ -149,10 +163,12 @@ export function nextCallWindow(now = new Date()): string | undefined {
   return day.toISOString();
 }
 
-function assistantFor(r: CallRequest) {
+export function assistantFor(r: CallRequest, cityId = "paris", kind: "table" | "activite" | "hotel" = "table") {
+  const c = CALL_COUNTRY[cityId] ?? CALL_COUNTRY.paris;
+  const what = kind === "hotel" ? "une chambre" : kind === "activite" ? "une place (activité, cours ou visite)" : "une table";
   const when = new Date(`${r.date}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const hour = r.time.replace(":", " heures ").replace(/ 00$/, "");
-  const system = `Tu es l'assistant vocal de Marco, une application de conseils sur Paris. Tu téléphones au restaurant « ${r.place} » pour réserver une table au nom d'un client. Tu parles français, poliment, simplement, avec des phrases courtes, comme un client habitué au téléphone.
+  const system = `Tu es l'assistant vocal de Marco, une application de conseils sur Paris. Tu téléphones à « ${r.place} » pour réserver ${what} au nom d'un client. Tu parles ${c.langName} (la langue du lieu), poliment, simplement, avec des phrases courtes, comme un client habitué au téléphone.
 
 La réservation demandée :
 - Nom : ${r.name}
@@ -174,9 +190,9 @@ Quand la conversation est terminée, utilise l'outil endCall.`;
 
   return {
     name: "Marco reservation",
-    firstMessageMode: "assistant-waits-for-user",
-    firstMessage: `Bonjour ! Je suis l'assistant vocal de l'application Marco, j'appelle pour réserver une table au nom de ${r.name}, s'il vous plaît.`,
-    endCallMessage: "Merci beaucoup, bonne journée !",
+    firstMessage: c.lang === "fr" ? `Bonjour ! Je suis l'assistant vocal de l'application Marco, j'appelle pour réserver ${what} au nom de ${r.name}, s'il vous plaît.` : undefined,
+    firstMessageMode: c.lang === "fr" ? "assistant-waits-for-user" : "assistant-speaks-first-with-model-generated-message",
+    endCallMessage: c.lang === "fr" ? "Merci beaucoup, bonne journée !" : undefined,
     maxDurationSeconds: 300,
     model: {
       provider: "anthropic",
@@ -184,8 +200,8 @@ Quand la conversation est terminée, utilise l'outil endCall.`;
       messages: [{ role: "system", content: system }],
       tools: [{ type: "endCall" }],
     },
-    voice: parseVoice(process.env.VAPI_VOICE) ?? { provider: "azure", voiceId: "fr-FR-DeniseNeural" },
-    transcriber: { provider: "deepgram", model: "nova-2", language: "fr" },
+    voice: (c.lang === "fr" && parseVoice(process.env.VAPI_VOICE)) || { provider: "azure", voiceId: c.voice },
+    transcriber: { provider: "deepgram", model: "nova-2", language: c.lang },
     voicemailDetection: { provider: "vapi" },
     analysisPlan: {
       summaryPrompt: "Résume l'appel en une ou deux phrases en français, du point de vue du client : la table est-elle réservée, à quelle heure, et y a-t-il une condition particulière ?",

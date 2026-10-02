@@ -3,6 +3,9 @@ import type { City } from "../data/cities";
 import { bookUrl, GROUP_ICON, isSocial, mapsUrl, placeArea, placeKind, roomBookingUrls, telUrl, webUrl, type Place } from "../lib/annuaire";
 import { siteLabel } from "../lib/reservation";
 import { Icon } from "./Icon";
+import { ReserveButton } from "./ReserveButton";
+import { track } from "../lib/cloud";
+import { placeKey, withUtm, type Action } from "../lib/partners";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -12,6 +15,8 @@ export interface Stay { checkin?: string; checkout?: string; adults?: number; ro
 export function PlaceRow({ place: p, city, stay }: { place: Place; city: City; stay?: Stay }) {
   const navigate = useNavigate();
   const area = placeArea(p, city);
+  const key = placeKey(p, city.id);
+  const t = (action: Action) => () => track({ placeKey: key, place: p.name, city: city.id, action });
   const tel = telUrl(p);
   const site = webUrl(p);
   const hotel = p.group === "h";
@@ -32,24 +37,22 @@ export function PlaceRow({ place: p, city, stay }: { place: Place; city: City; s
         </div>
       </div>
       <div className="place-actions">
+        <ReserveButton
+          target={{ place: p.name, placeKey: key, city: city.id, address: [p.address, p.postcode].filter(Boolean).join(" "), kind: hotel ? "hotel" : p.group === "r" ? "table" : "activite", website: site || undefined, phone: p.phone || undefined }}
+        />
         {hotel && rooms && (
           <>
-            {rooms.official ? (
-              <a className="btn-mini primary" href={rooms.official} target="_blank" rel="noreferrer"><Icon name="bed" size={14} /> Réserver la chambre</a>
-            ) : (
-              <a className="btn-mini primary" href={rooms.booking} target="_blank" rel="noreferrer"><Icon name="bed" size={14} /> Réserver la chambre</a>
-            )}
-            {rooms.official && <a className="btn-mini" href={rooms.booking} target="_blank" rel="noreferrer">Prix aux dates</a>}
+            {rooms.official && <a className="btn-mini" href={withUtm(rooms.official)} target="_blank" rel="noreferrer" onClick={t("resa-hotel")}>Site de l'hôtel</a>}
+            <a className="btn-mini" href={rooms.booking} target="_blank" rel="noreferrer" onClick={t("resa-hotel")}>Prix aux dates</a>
           </>
         )}
-        {!hotel && canBook && site && !isSocial(p) && (
-          <a className="btn-mini primary" href={bookUrl(p, city)} target="_blank" rel="noreferrer"><Icon name="calendar" size={14} /> Réserver</a>
+        {!hotel && site && (
+          <a className="btn-mini" href={withUtm(canBook && !isSocial(p) ? bookUrl(p, city) : site)} target="_blank" rel="noreferrer" onClick={t("site")}>
+            {isSocial(p) ? (p.web.includes("instagram") ? "Instagram" : "Facebook") : siteLabel(site)}
+          </a>
         )}
-        {!hotel && site && (isSocial(p) || !canBook) && (
-          <a className="btn-mini" href={site} target="_blank" rel="noreferrer">{isSocial(p) ? (p.web.includes("instagram") ? "Instagram" : "Facebook") : siteLabel(site)}</a>
-        )}
-        {tel && <a className="btn-mini" href={tel}><Icon name="phone" size={14} /> Appeler</a>}
-        <a className="btn-mini" href={mapsUrl(p, city)} target="_blank" rel="noreferrer"><Icon name="pin" size={14} /> Y aller</a>
+        {tel && <a className="btn-mini" href={tel} onClick={t("appel")}><Icon name="phone" size={14} /> Appeler</a>}
+        <a className="btn-mini" href={mapsUrl(p, city)} target="_blank" rel="noreferrer" onClick={t("itineraire")}><Icon name="pin" size={14} /> Y aller</a>
         <button
           className="btn-mini"
           onClick={() =>
@@ -60,7 +63,7 @@ export function PlaceRow({ place: p, city, stay }: { place: Place; city: City; s
             )}&ia=1`)
           }
         >
-          <Icon name="sparkles" size={14} /> {p.group === "r" ? "Marco réserve" : "Demander à Marco"}
+          <Icon name="sparkles" size={14} /> Demander à Marco
         </button>
       </div>
     </article>

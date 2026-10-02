@@ -4,10 +4,11 @@ import { Icon } from "../components/Icon";
 import { CATEGORY_LABEL, MOOD_LABEL, QUARTIERS, SPOTS, spotById, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
 import { CITIES, type CityId } from "../data/cities";
-import { answerBooking, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
+import { answerBooking, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
+import { ACTION_LABEL, partnerReport, partnerStats } from "../lib/partners";
 
-type Tab = "lieux" | "rues" | "propositions" | "reservations";
+type Tab = "lieux" | "rues" | "propositions" | "reservations" | "partenaires";
 
 const EMPTY_SPOT: Spot = {
   id: "", name: "", category: "resto", quartier: QUARTIERS[0].name, arrondissement: 1, address: "",
@@ -30,12 +31,14 @@ function BookingRow({ b }: { b: Booking }) {
         <span className={`status status-${b.status}`}>{b.status === "confirmee" ? "Confirmée" : b.status === "impossible" ? "Impossible" : "À traiter"}</span>
       </div>
       <span className="small">{when} à {b.time} · {b.people} pers. · au nom de {b.name} · <a className="link" href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}>{b.phone}</a></span>
+      <span className="small">Code client : <strong className="code-inline">{b.code || "—"}</strong>{b.honored ? " · client venu ✓" : ""}</span>
       {b.note && <p className="small muted">« {b.note} »</p>}
       <a className="link small" href={spot ? reserveUrl(spot) : duckyUrl(b.place)} target="_blank" rel="noreferrer">Site du restaurant ›</a>
       <input className="input" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Message pour l'utilisateur (ex. Table en terrasse, confirmée par SMS)" />
       <div className="row gap-8">
         <button className="btn-mini primary" onClick={() => answerBooking(b.id, "confirmee", msg)}>Confirmée</button>
         <button className="btn-mini" onClick={() => answerBooking(b.id, "impossible", msg || "Complet à cet horaire : dis-moi si un autre créneau te va.")}>Impossible</button>
+        <button className={`btn-mini ${b.honored ? "primary" : ""}`} onClick={() => setHonored(b.id, !b.honored)}>{b.honored ? "Venu ✓" : "Client venu"}</button>
       </div>
     </div>
   );
@@ -201,6 +204,57 @@ function StreetForm({ initial, onDone }: { initial: StreetStory; onDone: () => v
   );
 }
 
+const PERIODS: [number, string][] = [[30, "30 jours"], [90, "3 mois"], [365, "1 an"]];
+
+/** Ce que Marco apporte à chaque établissement : réservations (avec code client), couverts, appels, itinéraires, visites du site. */
+function Partners() {
+  const cloud = useCloud();
+  const [days, setDays] = useState(90);
+  const [q, setQ] = useState("");
+  const [report, setReport] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const since = Date.now() - days * 86400000;
+  const all = partnerStats(cloud.bookings, cloud.visits, since);
+  const list = all.filter((s) => !q || s.place.toLowerCase().includes(q.toLowerCase()));
+  const total = all.reduce((a, s) => ({ leads: a.leads + s.leads, bookings: a.bookings + s.bookings, covers: a.covers + s.covers }), { leads: 0, bookings: 0, covers: 0 });
+  return (
+    <div className="admin-list">
+      <div className="chip-grid">
+        {PERIODS.map(([d, l]) => <button key={d} className={`chip small ${days === d ? "on" : ""}`} onClick={() => setDays(d)}>{l}</button>)}
+      </div>
+      <div className="partner-total">
+        <div><b>{total.leads}</b><span className="tiny">contacts générés</span></div>
+        <div><b>{total.bookings}</b><span className="tiny">réservations</span></div>
+        <div><b>{total.covers}</b><span className="tiny">couverts</span></div>
+      </div>
+      <div className="search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Chercher un établissement" /></div>
+      {!list.length && <p className="muted small">Pas encore de données sur cette période. Chaque « Réserver avec Marco », appel, itinéraire ou visite de site depuis l'app s'ajoute ici.</p>}
+      {list.map((s) => (
+        <div key={s.placeKey} className="partner-row">
+          <div className="row-between"><strong>{s.place}</strong><span className="tiny muted">{s.city}</span></div>
+          <div className="partner-kpis">
+            <span><b>{s.leads}</b>contacts</span>
+            <span><b>{s.bookings}</b>résas</span>
+            <span><b>{s.covers}</b>couverts</span>
+            <span><b>{s.honored}</b>venus</span>
+          </div>
+          <p className="tiny muted">{Object.entries(s.actions).map(([a, n]) => `${ACTION_LABEL[a] ?? a} : ${n}`).join(" · ") || "Aucun autre contact"}</p>
+          <button className="btn-mini primary" onClick={() => { setReport(partnerReport(s, since)); setCopied(false); }}>Rapport pour l'établissement</button>
+        </div>
+      ))}
+      {report && (
+        <div className="card">
+          <textarea className="input textarea" readOnly rows={14} value={report} onFocus={(e) => e.target.select()} />
+          <div className="row gap-8">
+            <button className="btn-mini primary" onClick={() => navigator.clipboard.writeText(report).then(() => setCopied(true), () => setCopied(false))}>{copied ? "Copié ✓" : "Copier"}</button>
+            <button className="btn-mini" onClick={() => setReport(null)}>Fermer</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Admin() {
   const navigate = useNavigate();
   const cloud = useCloud();
@@ -242,6 +296,7 @@ export function Admin() {
         <button className={tab === "reservations" ? "on" : ""} onClick={() => setTab("reservations")}>
           Réservations{pending ? ` (${pending})` : ""}
         </button>
+        <button className={tab === "partenaires" ? "on" : ""} onClick={() => setTab("partenaires")}>Partenaires</button>
         <button className={tab === "propositions" ? "on" : ""} onClick={() => setTab("propositions")}>
           Propositions{cloud.suggestions.length ? ` (${cloud.suggestions.length})` : ""}
         </button>
@@ -254,7 +309,9 @@ export function Admin() {
         </div>
       )}
 
-      {tab !== "propositions" && tab !== "reservations" && (
+      {tab === "partenaires" && <Partners />}
+
+      {tab !== "propositions" && tab !== "reservations" && tab !== "partenaires" && (
         <div className="row gap-8">
           <div className="search grow">
             <Icon name="search" size={16} />

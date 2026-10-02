@@ -121,6 +121,7 @@ export function Profile() {
                   <p className="tiny muted">
                     {new Date(`${b.date}T${b.time}`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })} à {b.time} · {b.people} pers.
                   </p>
+                  {b.code && <p className="tiny">Code Marco à montrer : <strong className="code-inline">{b.code}</strong></p>}
                   {b.reponse && <p className="tiny">Marco : {b.reponse}</p>}
                 </div>
                 <span className={`status status-${b.status}`}>

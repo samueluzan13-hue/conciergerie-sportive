@@ -22,6 +22,7 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [state, setState] = useState<"form" | "sending" | "sent" | "error">("form");
+  const [code, setCode] = useState("");
   // l'agent vocal de Marco appelle lui-même le restaurant (site en ligne, si configuré)
   const [voice, setVoice] = useState(false);
   const [call, setCall] = useState<{ id: string; bookingId: string; scheduledFor?: string } | null>(null);
@@ -69,8 +70,9 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
       return;
     }
     try {
-      const id = await requestBooking({ place: draft.place, spotId: draft.spotId, date, time, people, name: name.trim(), phone: phone.trim(), note: note.trim() });
-      addBooking({ id, place: draft.place, spotId: draft.spotId, date, time, people, status: "en_attente" });
+      const { id, code } = await requestBooking({ place: draft.place, spotId: draft.spotId, date, time, people, name: name.trim(), phone: phone.trim(), note: note.trim(), city: spot?.city ?? "paris", address: spot?.address ?? "", kind: "table" });
+      addBooking({ id, place: draft.place, spotId: draft.spotId, date, time, people, status: "en_attente", code });
+      setCode(code);
       setState("sent");
     } catch (e) {
       log("resa:error", e);
@@ -115,6 +117,7 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
       <div className="booking-card sent">
         <p className="booking-title"><Icon name="check" size={16} /> Demande envoyée à l'équipe Marco</p>
         <p className="small">{draft.place} · {when} à {time} · {people} pers.</p>
+        {code && <p className="voucher">Ton code Marco : <strong>{code}</strong><span className="tiny">Montre-le en arrivant</span></p>}
         <p className="tiny muted">On réserve pour toi et tu reçois la confirmation ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>
       </div>
     );

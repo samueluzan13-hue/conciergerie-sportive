@@ -643,3 +643,23 @@ button.marco-card { text-align: left; width: 100%; }
 .dir-card { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 6px 38px; }
 .dir-card h4 { margin: 0; font-size: 14px; }
 .dir-entry { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+
+/* Réservation Marco + code client */
+.reserve-sheet { display: flex; flex-direction: column; gap: 10px; }
+.reserve-sheet h2 { margin: 0; }
+.reserve-sheet .booking-grid input { width: 100%; }
+.field-plain { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field-plain input, .reserve-sheet .booking-grid input { height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); padding: 0 12px; font: inherit; font-weight: 500; color: var(--ink); }
+.voucher { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--orange-soft); border: 1.5px dashed var(--orange); margin: 0; }
+.voucher strong { font-size: 20px; letter-spacing: 2px; color: var(--orange); }
+.voucher.big { align-items: center; text-align: center; padding: 16px; }
+.voucher.big strong { font-size: 32px; letter-spacing: 4px; }
+.partner-row { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.partner-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.partner-kpis span { background: var(--sand); border-radius: 10px; padding: 6px; text-align: center; font-size: 11px; color: var(--ink-2); }
+.partner-kpis b { display: block; font-size: 17px; color: var(--ink); }
+.partner-total { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.partner-total div { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 10px; text-align: center; }
+.partner-total b { display: block; font-size: 22px; color: var(--orange); }
+.reserve-main { margin: 4px 0 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.code-inline { letter-spacing: 1px; color: var(--orange); }

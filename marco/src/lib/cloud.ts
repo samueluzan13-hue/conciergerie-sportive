@@ -49,6 +49,7 @@ export interface CloudState {
   suggestions: Suggestion[];
   /** demandes de réservation (vue éditeur) */
   bookings: Booking[];
+  visits: Visit[];
 }
 
 export type BookingStatus = "en_attente" | "confirmee" | "impossible";
@@ -67,6 +68,27 @@ export interface Booking {
   /** message de l'équipe Marco à l'utilisateur */
   reponse: string;
   createdAt: number;
+  /** code client Marco (à montrer sur place) : c'est lui qui prouve que le client vient de Marco */
+  code: string;
+  /** clé stable du lieu (fiche Marco ou annuaire), pour les statistiques partenaires */
+  placeKey: string;
+  city: string;
+  kind: string;
+  address: string;
+  /** hôtel : date de départ */
+  checkout: string;
+  /** le client est bien venu (validé par l'établissement ou l'équipe) */
+  honored: boolean;
+}
+
+/** Un geste d'un utilisateur vers un lieu (réserver, appeler, itinéraire, site) : la preuve du trafic apporté. */
+export interface Visit {
+  id: string;
+  placeKey: string;
+  place: string;
+  city: string;
+  action: string;
+  at: number;
 }
 
 export interface Suggestion {
@@ -78,7 +100,7 @@ export interface Suggestion {
   createdAt: number;
 }
 
-let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [], bookings: [] };
+let cloud: CloudState = { db: false, fromDb: false, isAdmin: false, canWrite: false, userId: null, version: 0, suggestions: [], bookings: [], visits: [] };
 const listeners = new Set<() => void>();
 const emit = (patch: Partial<CloudState>) => {
   cloud = { ...cloud, ...patch };
@@ -210,6 +232,9 @@ export async function startCloud(onUserState: (state: Record<string, unknown> | 
           .sort((a, b) => order[a.status] - order[b.status] || b.createdAt - a.createdAt),
       });
     }, (e) => log("db:reservations:error", e.code));
+    db.collection("visites").onSnapshot((snap) => {
+      emit({ visits: snap.docs.map((d) => toVisit(d.id, d.data() ?? {})).filter((v): v is Visit => !!v) });
+    }, (e) => log("db:visites:error", e.code));
     db.collection("suggestions").onSnapshot((snap) => {
       emit({
         suggestions: snap.docs
@@ -293,16 +318,60 @@ function toBooking(id: string, x: Record<string, unknown>): Booking | null {
     people: Math.max(1, Math.min(20, num(x.people) || 1)),
     name: str(x.name, 80), phone: str(x.phone, 30), note: str(x.note, 400),
     reponse: str(x.reponse, 400), createdAt: num(x.createdAt),
+    code: str(x.code, 12), placeKey: str(x.placeKey, 160) || (str(x.spotId, 80) ? `spot:${str(x.spotId, 80)}` : `nom:${place.toLowerCase()}`),
+    city: str(x.city, 20) || "paris", kind: str(x.kind, 20) || "table", address: str(x.address, 200),
+    checkout: str(x.checkout, 10), honored: x.honored === true,
   };
 }
 
+function toVisit(id: string, x: Record<string, unknown>): Visit | null {
+  const placeKey = str(x.placeKey, 160);
+  if (!placeKey) return null;
+  return { id, placeKey, place: str(x.place, 120), city: str(x.city, 20), action: str(x.action, 20), at: num(x.at) };
+}
+
+// code lisible au téléphone : pas de 0/O ni 1/I
+const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export const newCode = () => `M-${Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join("")}`;
+
 /** Envoie la demande à l'équipe Marco. Renvoie l'identifiant, ou lève une erreur si la base refuse. */
-export async function requestBooking(b: Omit<Booking, "id" | "userId" | "status" | "reponse" | "createdAt">): Promise<string> {
+export type BookingInput = Omit<Booking, "id" | "userId" | "status" | "reponse" | "createdAt" | "code" | "honored" | "placeKey" | "city" | "kind" | "address" | "checkout"> &
+  Partial<Pick<Booking, "placeKey" | "city" | "kind" | "address" | "checkout" | "code">>;
+
+/** Envoie la demande à l'équipe Marco. Renvoie l'identifiant et le code client, ou lève une erreur si la base refuse. */
+export async function requestBooking(b: BookingInput): Promise<{ id: string; code: string }> {
   if (!dbRef || !cloud.userId) throw new Error("Base indisponible");
   const id = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-  await dbRef.collection("reservations").doc(id).set({ ...b, spotId: b.spotId ?? "", userId: cloud.userId, status: "en_attente", reponse: "", createdAt: Date.now() });
+  const code = b.code || newCode();
+  await dbRef.collection("reservations").doc(id).set({
+    ...b, spotId: b.spotId ?? "", placeKey: b.placeKey ?? (b.spotId ? `spot:${b.spotId}` : `nom:${b.place.toLowerCase()}`),
+    city: b.city ?? "paris", kind: b.kind ?? "table", address: b.address ?? "", checkout: b.checkout ?? "",
+    code, honored: false, userId: cloud.userId, status: "en_attente", reponse: "", createdAt: Date.now(),
+  });
   log("resa:envoyee", id);
-  return id;
+  return { id, code };
+}
+
+/** L'établissement a confirmé que le client est venu (code présenté). */
+export async function setHonored(id: string, honored: boolean) {
+  await dbRef?.collection("reservations").doc(id).update({ honored, honoredAt: honored ? Date.now() : 0 });
+}
+
+/** Trace un geste vers un lieu. Sans base (aperçu hors connexion), le geste est gardé sur l'appareil. */
+export function track(v: Omit<Visit, "id" | "at">) {
+  const at = Date.now();
+  const id = `v${at.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  if (dbRef && cloud.userId) {
+    dbRef.collection("visites").doc(id).set({ ...v, at }).catch((e: { code?: string }) => log("visite:error", e?.code));
+    return;
+  }
+  try {
+    const k = "marco.visites.v1";
+    const all = JSON.parse(localStorage.getItem(k) ?? "[]");
+    localStorage.setItem(k, JSON.stringify([...all, { ...v, at }].slice(-500)));
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Suit l'état d'une réservation (confirmée, impossible…). */

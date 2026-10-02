@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { MarcoLogo } from "../components/MarcoLogo";
 import { SpotPhoto } from "../components/SpotPhoto";
-import { bookingUrl, useSpotSheet } from "../components/SpotSheet";
-import { bookingKind, CATEGORY_LABEL, QUARTIERS } from "../data/spots";
+import { useSpotSheet } from "../components/SpotSheet";
+import { ReserveButton } from "../components/ReserveButton";
+import { spotKey } from "../lib/partners";
+import { CATEGORY_LABEL, QUARTIERS } from "../data/spots";
 import { generatePlan, type Budget, type Duration, type Envie, type Plan, type PlanInput, type Who } from "../lib/planner";
 import { savePlan, useCity, useStore } from "../lib/store";
 
@@ -109,10 +111,11 @@ export function Planner() {
                     <span className="tiny eyebrow">{CATEGORY_LABEL[s.spot.category]} · {s.spot.quartier}</span>
                     <h3>{s.spot.name}</h3>
                     <p className="small muted">{s.why}</p>
-                    {bookingKind(s.spot) && (
-                      <a className="book-link" href={bookingUrl(s.spot)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                        <Icon name="calendar" size={14} /> {bookingKind(s.spot) === "table" ? "Réserver au restaurant" : "Réserver"}
-                      </a>
+                    {s.spot.category !== "nature" && (
+                      <ReserveButton
+                        className="book-link"
+                        target={{ place: s.spot.name, placeKey: spotKey(s.spot), city: s.spot.city ?? "paris", address: s.spot.address, spotId: s.spot.id, kind: s.spot.category === "resto" ? "table" : "activite", website: s.spot.website }}
+                      />
                     )}
                   </div>
                 </div>

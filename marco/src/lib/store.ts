@@ -30,6 +30,10 @@ export interface MyBooking {
   reponse?: string;
   /** appel passé par l'agent vocal de Marco */
   callId?: string;
+  /** code client Marco à montrer sur place */
+  code?: string;
+  /** hôtel : date de départ */
+  checkout?: string;
 }
 
 /** Vols et hébergements réservés dans Marco. */

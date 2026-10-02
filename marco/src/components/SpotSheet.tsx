@@ -7,7 +7,9 @@ import { Icon } from "./Icon";
 import { reserveUrl, siteLabel } from "../lib/reservation";
 import { SpotPhoto } from "./SpotPhoto";
 import { HOTEL_PRICE_LABEL } from "../data/spots-hotels";
-import { getAssets, setSpotPhoto } from "../lib/cloud";
+import { getAssets, setSpotPhoto, track } from "../lib/cloud";
+import { spotKey, withUtm } from "../lib/partners";
+import { ReserveButton } from "./ReserveButton";
 import { HiddenBadge, Price, SaveButton } from "./SpotCard";
 
 const Ctx = createContext<(id: string) => void>(() => {});
@@ -119,26 +121,36 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               <span className="tip-label">L'astuce de Marco</span>
               {spot.tip}
             </div>
+            {(book || spot.category !== "nature") && (
+              <ReserveButton
+                className="btn btn-primary btn-block reserve-main"
+                label={spot.category === "hotel" ? "Réserver une chambre avec Marco" : "Réserver avec Marco"}
+                target={{
+                  place: spot.name, placeKey: spotKey(spot), city: spot.city ?? "paris", address: spot.address, spotId: spot.id,
+                  kind: spot.category === "hotel" ? "hotel" : spot.category === "resto" ? "table" : "activite", website: spot.website,
+                }}
+              />
+            )}
             <div className="sheet-actions">
               {book ? (
-                <a className="btn btn-primary" href={bookingUrl(spot)} target="_blank" rel="noreferrer">
+                <a className="btn btn-ghost" href={withUtm(bookingUrl(spot))} target="_blank" rel="noreferrer" onClick={() => track({ placeKey: spotKey(spot), place: spot.name, city: spot.city ?? "paris", action: "site" })}>
                   <Icon name="calendar" size={18} />
-                  {book === "table" ? "Réserver au restaurant" : book === "hotel" ? "Site de l'hôtel" : "Réserver sur le site officiel"}
+                  {book === "hotel" ? "Site de l'hôtel" : "Site officiel"}
                 </a>
               ) : null}
-              <a className={`btn ${book ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
+              <a className="btn btn-ghost" href={directionsUrl(spot)} target="_blank" rel="noreferrer" onClick={() => track({ placeKey: spotKey(spot), place: spot.name, city: spot.city ?? "paris", action: "itineraire" })}>
                 <Icon name="pin" size={18} /> Y aller
               </a>
             </div>
             {spot.category === "hotel" && (
               <button
-                className="btn btn-primary btn-block ask-marco"
+                className="btn btn-soft btn-block ask-marco"
                 onClick={() => {
                   setId(null);
                   navigate(`/voyages?tab=hotels&city=${spot.city ?? "paris"}&hotel=${spot.id}`);
                 }}
               >
-                <Icon name="bed" size={18} /> Voir les chambres et réserver dans Marco
+                <Icon name="bed" size={18} /> Voir les chambres et les prix
               </button>
             )}
             <button

@@ -21,6 +21,7 @@
   --c-nature: #5e8a4c;
   --c-insolite: #2f6f6a;
   --c-activite: #3d5a98;
+  --c-hotel: #1f4e5f;
   --map-out: #efe4d4;
   --map-land: #fbf6ee;
   --map-road: #eadbc6;
@@ -413,7 +414,7 @@ body.typing .chat-input { bottom: 0; padding-bottom: calc(10px + env(safe-area-i
 .map-dot { cursor: pointer; }
 .map-selected { fill: var(--ink); font-weight: 700; font-family: var(--sans); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; pointer-events: none; }
 .map-street-label { fill: var(--ink); font-weight: 700; font-family: var(--sans); paint-order: stroke; stroke: var(--paper); stroke-width: 3px; pointer-events: none; }
-.map-zoom { position: absolute; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.map-zoom { position: absolute; right: 12px; top: calc(62px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
 .map-zoom button { width: 42px; height: 42px; background: var(--paper); font-size: 22px; font-weight: 600; color: var(--ink-2); }
 .map-zoom button + button { border-top: 1px solid var(--line); }
 .map-hint { position: absolute; left: 12px; bottom: 36px; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,253,249,.9); padding: 5px 10px; border-radius: 999px; color: var(--ink-2); }
@@ -534,3 +535,37 @@ button.marco-card { text-align: left; width: 100%; }
 .booking-card.calling .booking-title svg { animation: blink 1.2s infinite; }
 .booking-card.failed { border-color: #b3412a; }
 .booking-card.failed .booking-title { color: #b3412a; }
+
+.chip.dot-hotel::before { background: var(--c-hotel); }
+
+/* Initiale du profil, en haut à droite de chaque écran */
+.profile-fab { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 30; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: #fff; cursor: pointer; background: linear-gradient(145deg, var(--orange-2), var(--orange)); box-shadow: 0 6px 14px rgba(242,106,27,.3), 0 0 0 3px var(--cream); }
+.chat-head, .plan-head { padding-right: 58px; }
+
+/* Voyages : onglets, hôtels, vols */
+.seg { display: flex; gap: 6px; padding: 4px; border-radius: 16px; background: var(--sand); }
+.seg button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px 6px; border-radius: 12px; font-weight: 700; font-size: 13px; color: var(--ink-2); }
+.seg button.on { background: var(--paper); color: var(--orange); box-shadow: var(--shadow); }
+.travel-form { display: flex; flex-direction: column; gap: 12px; }
+.travel-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.travel-form input, .travel-form select, .chip-select { font: inherit; font-size: 15px; font-weight: 400; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); width: 100%; min-width: 0; box-sizing: border-box; }
+.chip-select { width: auto; padding: 7px 10px; border-radius: 999px; font-size: 13px; }
+.travel-form .booking-grid label:first-child { grid-column: auto; }
+.check-row { flex-direction: row !important; align-items: center; gap: 8px !important; font-size: 14px !important; }
+.check-row input { width: auto; }
+.chip.small { font-size: 12px; padding: 6px 11px; }
+.hotel-row { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); }
+.hotel-main { display: flex; gap: 12px; cursor: pointer; }
+.hotel-art { width: 84px; flex-shrink: 0; }
+.hotel-main p { margin: 2px 0 0; }
+.hotel-pitch { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.hotel-actions { display: flex; gap: 8px; }
+.hotel-actions .btn-mini { flex: 1; text-align: center; text-decoration: none; }
+.flight-results { display: flex; flex-direction: column; gap: 10px; }
+.flight-results p { margin: 0; }
+.flight-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink); text-decoration: none; }
+.flight-link > span { display: flex; flex-direction: column; gap: 2px; }
+.flight-link.main { border: 1.5px solid var(--orange); background: var(--orange-soft); }
+.hotel-actions .btn-mini { justify-content: center; }
+.voyage-hero.compact { padding: 18px 64px 18px 20px; }
+.voyage-hero.compact h1 { font-size: 24px; margin: 4px 0 0; }

@@ -47,7 +47,7 @@ export function Home() {
   const home = QUARTIERS.find((x) => x.name === profile.quartier) ?? QUARTIERS[0];
   const nearby = useMemo(
     () =>
-      SPOTS.filter((s) => s.hidden >= 2)
+      SPOTS.filter((s) => s.hidden >= 2 && s.category !== "hotel")
         .map((s) => ({ s, d: distanceKm(home, s) }))
         .sort((a, b) => a.d - b.d)
         .slice(0, 6),
@@ -55,11 +55,11 @@ export function Home() {
   );
   const forYou = useMemo(() => {
     const m = profile.moods;
-    const list = SPOTS.filter((s) => !m.length || s.moods.some((x) => m.includes(x)));
+    const list = SPOTS.filter((s) => s.category !== "hotel" && (!m.length || s.moods.some((x) => m.includes(x))));
     return (list.length ? list : SPOTS).slice(0, 8);
   }, [profile.moods, cloud.version]);
   const streetOfDay = STREETS.length ? STREETS[new Date().getDate() % STREETS.length] : null;
-  const favorites = useMemo(() => [...SPOTS].sort((a, b) => b.hidden - a.hidden || a.name.localeCompare(b.name)).slice(0, 4), [cloud.version]);
+  const favorites = useMemo(() => SPOTS.filter((s) => s.category !== "hotel").sort((a, b) => b.hidden - a.hidden || a.name.localeCompare(b.name)).slice(0, 4), [cloud.version]);
 
   return (
     <div className="page home">

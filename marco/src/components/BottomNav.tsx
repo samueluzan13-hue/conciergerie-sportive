@@ -7,7 +7,7 @@ const ITEMS = [
   { to: "/explorer", label: "Explorer", icon: "compass" },
   { to: "/marco", label: "Marco", icon: "" },
   { to: "/carte", label: "Carte", icon: "pin" },
-  { to: "/profil", label: "Profil", icon: "user" },
+  { to: "/voyages", label: "Voyages", icon: "plane" },
 ];
 
 export function BottomNav() {

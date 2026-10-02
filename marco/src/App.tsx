@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { BrowserRouter, MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { BottomNav } from "./components/BottomNav";
+import { ProfileButton } from "./components/ProfileButton";
 import { MarcoLogo } from "./components/MarcoLogo";
 import { SpotSheetProvider } from "./components/SpotSheet";
 import { useCloud } from "./lib/cloud";
@@ -92,6 +93,7 @@ export default function App() {
                   </Routes>
                   </SafeScreens>
                 </main>
+                <ProfileButton />
                 <BottomNav />
               </>
             ) : (

@@ -6,6 +6,8 @@ import { pushHistory } from "../lib/store";
 import { Icon } from "./Icon";
 import { reserveUrl, siteLabel } from "../lib/reservation";
 import { SpotPhoto } from "./SpotPhoto";
+import { HOTEL_PRICE_LABEL } from "../data/spots-hotels";
+import { hotelCompareUrl } from "../lib/travel";
 import { getAssets, setSpotPhoto } from "../lib/cloud";
 import { HiddenBadge, Price, SaveButton } from "./SpotCard";
 
@@ -104,7 +106,14 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               {spot.moods.map((m) => (
                 <span key={m} className="tag">{MOOD_LABEL[m]}</span>
               ))}
-              <span className="tag"><Icon name="clock" size={13} /> ~{spot.duration} min</span>
+              {spot.category === "hotel" ? (
+                <>
+                  <span className="tag">{spot.stars ? `${"★".repeat(spot.stars)} ${spot.stars} étoile${spot.stars > 1 ? "s" : ""}` : "Auberge"}</span>
+                  <span className="tag"><Icon name="euro" size={13} /> {HOTEL_PRICE_LABEL[spot.price]}</span>
+                </>
+              ) : (
+                <span className="tag"><Icon name="clock" size={13} /> ~{spot.duration} min</span>
+              )}
             </div>
             <p>{spot.pitch}</p>
             <div className="tip">
@@ -115,13 +124,18 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               {book ? (
                 <a className="btn btn-primary" href={bookingUrl(spot)} target="_blank" rel="noreferrer">
                   <Icon name="calendar" size={18} />
-                  {book === "table" ? "Réserver au restaurant" : "Réserver sur le site officiel"}
+                  {book === "table" ? "Réserver au restaurant" : book === "hotel" ? "Réserver à l'hôtel" : "Réserver sur le site officiel"}
                 </a>
               ) : null}
               <a className={`btn ${book ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
                 <Icon name="pin" size={18} /> Y aller
               </a>
             </div>
+            {spot.category === "hotel" && (
+              <a className="btn btn-ghost btn-block ask-marco" href={hotelCompareUrl(spot.name)} target="_blank" rel="noreferrer">
+                <Icon name="search" size={18} /> Comparer les prix pour mes dates
+              </a>
+            )}
             <button
               className="btn btn-soft btn-block ask-marco"
               onClick={() => {

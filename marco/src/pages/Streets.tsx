@@ -89,7 +89,7 @@ function VoieView({ v, query }: { v?: Voie; query: string }) {
     };
   }, [name]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const nearby = useMemo(() => (v ? SPOTS.filter((s) => v.a.includes(s.arrondissement)).slice(0, 3) : []), [v]);
+  const nearby = useMemo(() => (v ? SPOTS.filter((s) => s.category !== "hotel" && v.a.includes(s.arrondissement)).slice(0, 3) : []), [v]);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name}, Paris`)}`;
 
   return (

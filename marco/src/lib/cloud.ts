@@ -98,7 +98,7 @@ export function useCloud() {
 let dbRef: Db | null = null;
 
 /* ---------- Validation (les données partagées ne sont jamais fiables) ---------- */
-const CATS: Category[] = ["resto", "bar", "cafe", "culture", "nature", "insolite", "activite"];
+const CATS: Category[] = ["resto", "bar", "cafe", "culture", "nature", "insolite", "activite", "hotel"];
 const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
 const num = (v: unknown, d = 0) => (typeof v === "number" && isFinite(v) ? v : d);
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, Math.round(n)));
@@ -121,8 +121,9 @@ export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
     moods: Array.isArray(d.moods) ? (d.moods.filter((m) => typeof m === "string") as Mood[]) : [],
     pitch: str(d.pitch, 600),
     tip: str(d.tip, 600),
-    duration: clamp(num(d.duration, 60), 10, 300),
-    bookable: d.bookable === "table" || d.bookable === "activite" ? d.bookable : undefined,
+    duration: category === "hotel" ? 0 : clamp(num(d.duration, 60), 10, 300),
+    bookable: d.bookable === "table" || d.bookable === "activite" || d.bookable === "hotel" ? d.bookable : undefined,
+    stars: typeof d.stars === "number" ? clamp(d.stars, 0, 5) : undefined,
     diet: Array.isArray(d.diet) ? (d.diet.filter((x) => x === "casher" || x === "halal") as Spot["diet"]) : undefined,
     photo: typeof d.photo === "string" && (/^[0-9a-f]{32}$/.test(d.photo) || /^https:\/\//.test(d.photo)) ? d.photo : undefined,
     photoCredit: str(d.photoCredit, 120) || undefined,

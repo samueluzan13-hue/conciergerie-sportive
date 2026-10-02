@@ -36,7 +36,9 @@ function pick(filter: (s: Spot) => boolean, t: string, n = 3) {
   const origin = (arr && arrCenter(arr)) ||
     QUARTIERS.find((x) => norm(t).includes(norm(x.name).split(" /")[0])) ||
     QUARTIERS.find((x) => x.name === profile.quartier) || QUARTIERS[0];
-  const ranked = SPOTS.filter(filter)
+  // les hôtels ne sortent que si on les demande
+  const pool = SPOTS.filter(filter);
+  const ranked = (pool.every((s) => s.category === "hotel") ? pool : pool.filter((s) => s.category !== "hotel"))
     .map((s) => ({ s, d: distanceKm(origin, s) - s.hidden * 0.4 - (arr && s.arrondissement === arr ? 5 : 0) }))
     .sort((a, b) => a.d - b.d)
     .map((x) => x.s);
@@ -138,6 +140,24 @@ export function localReply(input: string): string {
     return `### ${plan.title}\n${plan.intro}\n\n${plan.stops
       .map((s) => `- **${s.start}** · [[spot:${s.spot.id}]]${s.travel ? ` _(${s.travel.minutes} min ${s.travel.mode})_` : ""}`)
       .join("\n")}\n\nTu veux l'ajuster ? Ouvre le **Planificateur** pour choisir ton budget, tes envies et ton quartier de départ.`;
+  }
+
+  // 3a. Hôtels
+  if (has(t, ["hotel", "dormir", "chambre", "nuit a paris", "hebergement", "auberge", "palace", "loger"])) {
+    strong = false; // l'IA connaît aussi les disponibilités et tous les hôtels ; la sélection sert de secours
+    const cheap = has(t, ["pas cher", "budget", "petit prix", "auberge", "economique", "moins cher"]);
+    const lux = has(t, ["luxe", "palace", "5 etoiles", "haut de gamme", "plus cher"]);
+    return `${answer(
+      cheap ? "Pour dormir sans se ruiner :" : lux ? "Pour se faire plaisir :" : "Mes hôtels coups de cœur :",
+      (s) => s.category === "hotel" && (!cheap || s.price === 1) && (!lux || s.price === 3),
+      t, 4, "comme hôtel",
+    )}\n\nTous les hôtels triés du moins cher au plus cher : [[go:/voyages?tab=hotels|Voir les hôtels]]`;
+  }
+
+  // 3b. Vols
+  if (has(t, ["vol ", "vols", "avion", "billet d'avion", "aeroport", "compagnie aerienne", "low cost"])) {
+    strong = false;
+    return `Je compare les vols pour toi sur Kayak, Google Vols et Skyscanner, triés du moins cher au plus cher (ou le plus rapide) : [[go:/voyages?tab=vols|Chercher un vol]]\n\nMes réflexes pour payer moins cher : regarde le calendrier des prix sur plusieurs jours, compare Orly, Roissy et Beauvais, et vérifie le prix des bagages en soute avant de choisir un low cost.`;
   }
 
   // 3. Réservation / voyage

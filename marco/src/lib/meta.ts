@@ -1,4 +1,5 @@
 import { spotById } from "../data/spots";
+import type { FlightSearch } from "./travel";
 
 /**
  * Marqueurs « invisibles » que l'IA ajoute à ses réponses et que l'app transforme en actions :
@@ -6,6 +7,7 @@ import { spotById } from "../data/spots";
  * - [[memo:Mange casher]] → ce que Marco retient de l'utilisateur (profil, supprimable)
  * - [[plan:Titre|19:00 spot-id|21:00 spot-id]] → bouton « Enregistrer ce plan »
  * - [[resa:Nom|spot-id ou -|2026-10-02|20:00|4]] → carte de réservation prise en charge par Marco
+ * - [[vol:PAR|LIS|2026-10-10|2026-10-14|2|prix]] → carte de recherche de vols (comparateurs pré-remplis et triés)
  */
 export interface ReplyMeta {
   body: string;
@@ -13,6 +15,7 @@ export interface ReplyMeta {
   memos: string[];
   plan: { title: string; stops: { time: string; spotId: string }[] } | null;
   resa: BookingDraft | null;
+  flight: FlightSearch | null;
 }
 
 export interface BookingDraft {
@@ -23,10 +26,10 @@ export interface BookingDraft {
   people: number;
 }
 
-const META = /\[\[(suggestions|memo|plan|resa):([^\]]*)\]\]/g;
+const META = /\[\[(suggestions|memo|plan|resa|vol):([^\]]*)\]\]/g;
 
 export function parseReply(text: string): ReplyMeta {
-  const out: ReplyMeta = { body: "", suggestions: [], memos: [], plan: null, resa: null };
+  const out: ReplyMeta = { body: "", suggestions: [], memos: [], plan: null, resa: null, flight: null };
   let body = text.replace(META, (_, kind: string, value: string) => {
     const v = value.trim();
     if (kind === "suggestions") out.suggestions = v.split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4);
@@ -47,6 +50,19 @@ export function parseReply(text: string): ReplyMeta {
           date: /^\d{4}-\d{2}-\d{2}$/.test(date ?? "") ? date : "",
           time: /^\d{1,2}[:h]\d{2}$/.test(time ?? "") ? time.replace("h", ":").padStart(5, "0") : "",
           people: Math.min(20, Math.max(1, parseInt(people ?? "", 10) || 2)),
+        };
+    } else if (kind === "vol") {
+      const [from, to, depart, back, adults, sort] = v.split("|").map((x) => x.trim());
+      const date = (d?: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d ?? "") ? d! : "");
+      if (/^[A-Za-z]{3}$/.test(from ?? "") && /^[A-Za-z]{3}$/.test(to ?? "") && date(depart))
+        out.flight = {
+          from: from.toUpperCase(),
+          to: to.toUpperCase(),
+          depart: date(depart),
+          back: date(back) || undefined,
+          adults: Math.min(9, Math.max(1, parseInt(adults ?? "", 10) || 1)),
+          cabin: "economy",
+          sort: sort === "prix-desc" || sort === "rapide" || sort === "meilleur" ? sort : "prix",
         };
     }
     return "";

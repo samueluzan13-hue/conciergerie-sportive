@@ -1,8 +1,9 @@
 import { EXTRA_SPOTS } from "./spots-extra";
 import { RESTO_SPOTS } from "./spots-restos";
 import { ACTIVITY_SPOTS } from "./spots-activites";
+import { HOTEL_SPOTS } from "./spots-hotels";
 import { WEBSITES } from "./websites";
-export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite" | "activite";
+export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite" | "activite" | "hotel";
 
 export type Diet = "casher" | "halal";
 
@@ -25,7 +26,9 @@ export interface Spot {
   tip: string;
   /** durée conseillée sur place, en minutes */
   duration: number;
-  bookable?: "table" | "activite";
+  bookable?: "table" | "activite" | "hotel";
+  /** hôtels : nombre d'étoiles (0 = auberge de jeunesse) */
+  stars?: number;
   /** cuisine casher / halal (certification à vérifier sur place) */
   diet?: Diet[];
   /** photo : identifiant d'image hébergée dans l'app (32 caractères) ou adresse https */
@@ -44,6 +47,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   nature: "Nature",
   insolite: "Insolite",
   activite: "Activités",
+  hotel: "Hôtels",
 };
 
 export const MOOD_LABEL: Record<Mood, string> = {
@@ -515,14 +519,15 @@ const BASE_SPOTS: Spot[] = [
   },
 ];
 
-export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS];
+export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS, ...HOTEL_SPOTS];
 for (const s of SPOTS) s.website ??= WEBSITES[s.id];
 
 /** Type de réservation proposé : tous les restos se réservent (table), toutes les activités aussi. */
-export function bookingKind(s: Spot): "table" | "activite" | undefined {
+export function bookingKind(s: Spot): "table" | "activite" | "hotel" | undefined {
   if (s.bookable) return s.bookable;
   if (s.category === "resto") return "table";
   if (s.category === "activite") return "activite";
+  if (s.category === "hotel") return "hotel";
   return undefined;
 }
 

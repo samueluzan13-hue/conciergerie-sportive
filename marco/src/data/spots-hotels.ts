@@ -69,7 +69,7 @@ export const HOTEL_SPOTS: Spot[] = ROWS.map(([id, name, quartier, arrondissement
 
 /** Repères de prix affichés (indicatifs, par nuit pour une chambre double). */
 export const HOTEL_PRICE_LABEL: Record<1 | 2 | 3, string> = {
-  1: "Moins de 150 € la nuit",
-  2: "150 à 350 € la nuit",
-  3: "Plus de 350 € la nuit",
+  1: "Petit budget",
+  2: "Milieu de gamme",
+  3: "Haut de gamme",
 };

@@ -78,7 +78,9 @@ export async function askMarco(
       issue = "denied";
       return null;
     }
-    const intro = `${marcoInstructions(profile.city)}\n\n${profileNote(profile)}\n${nowNote()}\n\nRéponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
+    const intro = `${marcoInstructions(profile.city)}\n\n${profileNote(profile)}\n${nowNote()}\n\nIMPORTANT : ici tu n'as PAS accès à internet. Ne donne donc AUCUN prix chiffré (vol, hôtel, Airbnb, menu, entrée, activité), ni estimation ni fourchette : tes chiffres seraient faux. Utilise seulement €, €€, €€€ pour situer un budget, et dis que le bouton de Marco ouvre les vrais prix du jour. Pour les horaires, dis « à confirmer » si tu n'es pas sûr.
+
+Réponds maintenant au message de l'utilisateur, dans le rôle de Marco.${
       opts.alreadyShown
         ? `\n\nL'app vient déjà d'afficher cette première sélection à l'utilisateur :\n${opts.alreadyShown}\nNe la répète pas : complète-la (un plan concret, des conseils, d'autres idées), en restant bref.`
         : ""

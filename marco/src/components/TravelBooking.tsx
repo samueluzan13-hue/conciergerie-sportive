@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { cityById, type CityId } from "../data/cities";
+import { spotById } from "../data/spots";
 import {
   bookFlight, bookStay, fmtDuration, fmtPrice, fmtTime, isoMinutes, offerMinutes, searchFlights, searchStays, stayRooms, travelConfig,
   type Confirmation, type FlightOffer, type FlightQuery, type Passenger, type StayQuery, type StayResult, type StayRoom, type TravelConfig,
@@ -49,6 +50,47 @@ function Confirmed({ c, title, detail, onClose }: { c: Confirmation; title: stri
 }
 
 /* =================================================================== */
+/* Prix réels quand aucune source de prix n'est branchée (aperçu)       */
+/* =================================================================== */
+const frDay = (d: string) => new Date(`${d}T12:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+
+export function flightPricesUrl(q: FlightQuery) {
+  const cabin = { economy: "", premium_economy: " en premium économique", business: " en classe affaires", first: " en première classe" }[q.cabin];
+  const city = (c: string) => placeName(c).replace(/\s*\(.*\)/, "");
+  const text = `Vols de ${city(q.from)} à ${city(q.to)} le ${q.depart}${q.back ? ` retour le ${q.back}` : " aller simple"} ${q.adults} adulte${q.adults > 1 ? "s" : ""}${cabin}`;
+  return `https://www.google.com/travel/flights?q=${encodeURIComponent(text)}&hl=fr&curr=EUR`;
+}
+
+function LiveFlightPrices({ query: q, sort }: { query: FlightQuery; sort: FlightSortKey }) {
+  return (
+    <div className="card live-prices">
+      <h3 className="serif">Prix réels de ton vol</h3>
+      <p className="small"><strong>{placeName(q.from)} → {placeName(q.to)}</strong> · {frDay(q.depart)}{q.back ? ` → ${frDay(q.back)}` : " · aller simple"} · {q.adults} voyageur{q.adults > 1 ? "s" : ""}</p>
+      <p className="tiny muted">Dans cette version, Marco n'est pas encore relié aux compagnies : plutôt que d'afficher des prix inventés, il ouvre ta recherche déjà remplie avec les vrais vols et les vrais prix du jour{sort === "prix" ? ", du moins cher au plus cher" : ""}. Tu choisis, puis tu paies sur le site de la compagnie.</p>
+      <a className="btn btn-primary btn-block" href={flightPricesUrl(q)} target="_blank" rel="noreferrer"><Icon name="plane" size={18} /> Voir les vrais prix et réserver</a>
+    </div>
+  );
+}
+
+function LiveStayPrices({ query: q, hotel, spotId }: { query: StayQuery; hotel?: string; spotId?: string }) {
+  const city = cityById(q.city);
+  const nights = Math.max(1, Math.round((new Date(q.checkout).getTime() - new Date(q.checkin).getTime()) / 86400000));
+  const p = new URLSearchParams({ ss: hotel ? `${hotel}, ${city.name}` : city.name, checkin: q.checkin, checkout: q.checkout, group_adults: String(q.adults), no_rooms: String(q.rooms), lang: "fr", selected_currency: "EUR" });
+  if (!hotel) p.set("order", "price");
+  if (q.kind === "appartement") p.set("nflt", "ht_id=201");
+  const url = `https://www.booking.com/searchresults.fr.html?${p.toString()}`;
+  return (
+    <div className="card live-prices">
+      <h3 className="serif">{hotel ? `Prix réels : ${hotel}` : `Prix réels à ${city.name}`}</h3>
+      <p className="small">{frDay(q.checkin)} → {frDay(q.checkout)} · {nights} nuit{nights > 1 ? "s" : ""} · {q.adults} voyageur{q.adults > 1 ? "s" : ""} · {q.rooms} {q.kind === "hotel" ? "chambre" : "logement"}{q.rooms > 1 ? "s" : ""}</p>
+      <p className="tiny muted">Marco n'affiche pas de prix inventés : ce bouton ouvre les disponibilités et les vrais prix à tes dates{hotel ? "" : ", du moins cher au plus cher"}. Pour réserver sur le site officiel d'un hôtel, utilise « Réserver la chambre » dans la liste juste en dessous.</p>
+      <a className="btn btn-primary btn-block" href={url} target="_blank" rel="noreferrer"><Icon name="bed" size={18} /> Voir les vrais prix et réserver</a>
+      {hotel && <a className="btn btn-soft btn-block" href={hotelSite(hotel, q.city, spotId)} target="_blank" rel="noreferrer">Site officiel de l'hôtel</a>}
+    </div>
+  );
+}
+
+/* =================================================================== */
 /* Vols                                                                 */
 /* =================================================================== */
 export function FlightResults({ query, sort, onSort, onFocus }: { query: FlightQuery; sort: FlightSortKey; onSort: (s: FlightSortKey) => void; onFocus?: (booking: boolean) => void }) {
@@ -90,6 +132,8 @@ export function FlightResults({ query, sort, onSort, onFocus }: { query: FlightQ
     document.querySelector(".content")?.scrollTo({ top: 0 });
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // sans source de prix branchée, Marco n'invente rien : il ouvre les vrais prix du trajet, déjà remplis
+  if (config?.demo) return <LiveFlightPrices query={query} sort={sort} />;
   if (open) return <FlightBooking offer={open} query={query} config={config} onBack={() => setOpen(null)} />;
 
   return (
@@ -255,6 +299,7 @@ export const STAY_SORT: Record<StaySortKey, string> = { prix: "Moins cher", "pri
 export function StayResults({ query, preselect, onPreselected, onFocus }: { query: StayQuery; preselect?: string | null; onPreselected?: () => void; onFocus?: (booking: boolean) => void }) {
   const [config, setConfig] = useState<TravelConfig | null>(null);
   const [results, setResults] = useState<StayResult[] | null>(null);
+  const [wanted] = useState(preselect);
   const [error, setError] = useState("");
   const [sort, setSort] = useState<StaySortKey>("prix");
   const [open, setOpen] = useState<StayResult | null>(null);
@@ -298,6 +343,7 @@ export function StayResults({ query, preselect, onPreselected, onFocus }: { quer
     if (open) document.querySelector(".content")?.scrollTo({ top: 0 });
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (config && (config.demo || !config.stays)) return <LiveStayPrices query={query} hotel={wanted ? spotById(wanted)?.name ?? wanted : undefined} spotId={wanted ?? undefined} />;
   if (open) return <StayBooking stay={open} query={query} config={config} onBack={() => setOpen(null)} />;
 
   return (

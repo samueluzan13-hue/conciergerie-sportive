@@ -246,7 +246,7 @@ function HotelSelection({ cityId, onBook }: { cityId: CityId; onBook: (h: Spot) 
             <div className="grow">
               <strong>{h.name}</strong>
               <p className="tiny muted">{h.stars ? "★".repeat(h.stars) : "Auberge"} · {placeLabel(h)}</p>
-              <p className="tiny">{HOTEL_PRICE_LABEL[h.price]} (indicatif)</p>
+              <p className="tiny">{HOTEL_PRICE_LABEL[h.price]} · prix réel à tes dates en un clic</p>
               <p className="tiny muted hotel-pitch">{h.pitch}</p>
             </div>
           </div>

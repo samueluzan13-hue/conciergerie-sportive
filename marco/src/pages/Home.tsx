@@ -59,6 +59,8 @@ export function Home() {
         .slice(0, 6),
     [home, spots],
   );
+  // adresses tendance / cachées (sélection « TikTok »), mélangées à chaque visite
+  const buzz = useMemo(() => spots.filter((s) => s.id.startsWith("tt-")).sort(() => Math.random() - 0.5).slice(0, 10), [spots]);
   const forYou = useMemo(() => {
     const m = profile.moods;
     const list = spots.filter((s) => s.category !== "hotel" && (!m.length || s.moods.some((x) => m.includes(x))));
@@ -130,6 +132,21 @@ export function Home() {
           ))}
         </div>
       </section>
+
+      {buzz.length > 0 && (
+        <section>
+          <div className="section-head">
+            <h2 className="serif">Ce qui buzze à {city.name}</h2>
+            <Link to="/explorer?mood=tendance" className="link small">Voir tout</Link>
+          </div>
+          <p className="muted small section-sub">Les adresses cachées et insolites qui tournent sur TikTok</p>
+          <div className="h-scroll">
+            {buzz.map((s) => (
+              <div key={s.id} className="h-item"><SpotCard spot={s} /></div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {streetOfDay && (
         <Link to={`/rues?q=${encodeURIComponent(streetOfDay.name)}`} className="street-card">

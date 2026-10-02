@@ -56,6 +56,21 @@ export function Planner() {
     setPlan(generatePlan(input));
     setSaved(false);
   };
+  // un vrai nouveau plan : d'autres adresses que celles du plan affiché (et des précédents)
+  const [seen, setSeen] = useState<Set<string>>(new Set());
+  const rebuild = () => {
+    const avoid = new Set([...seen, ...(plan?.stops.map((s) => s.spot.id) ?? [])]);
+    let next = generatePlan({ ...input, avoid });
+    // tout a déjà été proposé : on repart de zéro
+    if (next.stops.every((s) => avoid.has(s.spot.id))) {
+      avoid.clear();
+      next = generatePlan({ ...input, avoid: new Set(plan?.stops.map((s) => s.spot.id)) });
+    }
+    setSeen(avoid);
+    setPlan(next);
+    setSaved(false);
+    document.querySelector(".content")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (plan) {
     const shareText = `${plan.title} — mon plan Marco :\n${plan.stops.map((s) => `${s.start} ${s.spot.name} (${s.spot.address})`).join("\n")}`;
@@ -138,7 +153,7 @@ export function Planner() {
           >
             <Icon name={shared === "copied" ? "check" : "share"} size={18} /> {shared === "copied" ? "Copié" : "Partager"}
           </button>
-          <button className="btn btn-ghost" onClick={build}><Icon name="refresh" size={18} /> Autre plan</button>
+          <button className="btn btn-ghost" onClick={rebuild}><Icon name="refresh" size={18} /> Autre plan</button>
         </div>
         {shared === "manual" && <textarea id="share-text" className="input textarea" readOnly rows={5} value={shareText} onFocus={(e) => e.target.select()} />}
         <button className="btn btn-soft btn-block" onClick={() => navigate(`/marco?q=${encodeURIComponent(`Affine mon plan « ${plan.title} » : ${plan.stops.map((s) => `${s.start} ${s.spot.name}`).join(", ")}. `)}`)}>

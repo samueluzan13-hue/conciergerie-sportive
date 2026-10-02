@@ -18,6 +18,8 @@ export interface PlanInput {
   city?: CityId;
   /** lieux déjà utilisés (plans sur plusieurs jours) */
   exclude?: Set<string>;
+  /** lieux du plan précédent, à éviter si possible (« Autre plan ») */
+  avoid?: Set<string>;
 }
 
 export interface PlanStop {
@@ -116,9 +118,14 @@ export function generatePlan(input: PlanInput): Plan {
   const stops: PlanStop[] = [];
 
   for (const slot of slots) {
-    const candidates = pool.filter((s) => slot.cats.includes(s.category) && !used.has(s.id));
+    // « Autre plan » : on évite d'abord les lieux du plan précédent (s'il reste du choix)
+    let candidates = pool.filter((s) => slot.cats.includes(s.category) && !used.has(s.id) && !input.avoid?.has(s.id));
+    if (!candidates.length) candidates = pool.filter((s) => slot.cats.includes(s.category) && !used.has(s.id));
     if (!candidates.length) continue;
-    const best = candidates.map((s) => ({ s, sc: score(s, input, pos) })).sort((a, b) => b.sc - a.sc)[0].s;
+    const ranked = candidates.map((s) => ({ s, sc: score(s, input, pos) })).sort((a, b) => b.sc - a.sc);
+    // on tire parmi les meilleurs (pas toujours le premier) : chaque plan est différent
+    const top = ranked.slice(0, input.avoid ? 5 : 3);
+    const best = top[Math.floor(Math.random() * Math.random() * top.length)].s;
     const t = stops.length ? travel(pos, best) : undefined;
     if (t) clock += t.minutes;
     const start = clock;

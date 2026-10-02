@@ -622,3 +622,7 @@ button.marco-card { text-align: left; width: 100%; }
 .trip-item { cursor: pointer; align-items: flex-start !important; }
 .trip-text { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 14px; }
 .cities-quick { margin-top: -4px; }
+.pay-card { display: flex; flex-direction: column; gap: 8px; border: 1.5px solid var(--orange); }
+.pay-card p { margin: 0; }
+.btn.disabled { opacity: .5; pointer-events: none; }
+.airbnb-card { border: 1.5px solid #ff5a5f; }

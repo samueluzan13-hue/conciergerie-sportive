@@ -47,6 +47,8 @@ export interface MyTrip {
   demo?: boolean;
   /** séjour sur mesure : le programme écrit par Marco */
   text?: string;
+  /** choisi dans Marco, à payer sur le site de la compagnie / de l'hôtel */
+  payUrl?: string;
   createdAt: number;
 }
 

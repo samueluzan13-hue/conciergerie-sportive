@@ -1,3 +1,4 @@
+import { cityById } from "../src/data/cities";
 // Photos des lieux via l'API officielle Google Places (Find Place + Place Photo).
 // Nécessite GOOGLE_MAPS_API_KEY. L'image est relayée à la volée (pas de stockage), avec l'attribution
 // demandée par Google renvoyée dans l'en-tête X-Photo-Attribution.
@@ -20,16 +21,17 @@ export async function handlePhoto(search: URLSearchParams): Promise<PhotoRespons
   if (search.get("status")) return json(200, { enabled: Boolean(key) });
   if (!key) return json(503, { error: "no_key" });
   const q = (search.get("q") ?? "").slice(0, 200).trim();
+  const city = cityById(search.get("city") ?? undefined);
   if (!q) return json(400, { error: "missing_query" });
 
   try {
     if (!refs.has(q)) {
       const find = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
       find.search = new URLSearchParams({
-        input: `${q}, Paris`,
+        input: `${q}, ${city.name}`,
         inputtype: "textquery",
         fields: "photos",
-        locationbias: "circle:15000@48.8566,2.3522",
+        locationbias: `circle:15000@${city.center.lat},${city.center.lng}`,
         language: "fr",
         key,
       }).toString();

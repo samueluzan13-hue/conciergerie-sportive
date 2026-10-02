@@ -97,11 +97,12 @@ export function Profile() {
                   <strong className="small">{t.title}</strong>
                   <p className="tiny muted">{t.detail}</p>
                   {t.reference && <p className="tiny">Référence {t.reference}{t.price ? ` · ${fmtPrice(t.price, t.currency)}` : ""}</p>}
+                  {t.payUrl && <p className="tiny">{fmtPrice(t.price, t.currency)} · <a className="link" href={t.payUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Payer sur le site ›</a></p>}
                   {t.kind === "sejour" && <p className="tiny">Budget estimé sur place : {fmtPrice(t.price, t.currency)} · {openTrip === t.id ? "masquer" : "voir le programme"}</p>}
                   {openTrip === t.id && t.text && <div className="trip-text"><Markdown text={t.text} /></div>}
                 </div>
-                <span className={`status ${t.demo ? "" : "status-confirmee"}`}>
-                  {t.kind === "sejour" ? "Programme" : t.demo ? "Exemple" : "Réservé"}
+                <span className={`status ${t.demo || t.payUrl ? "" : "status-confirmee"}`}>
+                  {t.kind === "sejour" ? "Programme" : t.payUrl ? "À payer" : t.demo ? "Exemple" : "Réservé"}
                 </span>
               </li>
             ))}

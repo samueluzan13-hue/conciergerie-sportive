@@ -7,6 +7,7 @@ import {
 import { log } from "../lib/diag";
 import { placeName } from "../lib/travel";
 import { addTrip, useStore } from "../lib/store";
+import { airlineSite, hotelSite } from "../lib/paylinks";
 import { Icon } from "./Icon";
 import { Link } from "./Nav";
 
@@ -141,8 +142,12 @@ function FlightBooking({ offer, query, config, onBack }: { offer: FlightOffer; q
   const [state, setState] = useState<"form" | "sending" | "error">("form");
   const [error, setError] = useState("");
   const [done, setDone] = useState<Confirmation | null>(null);
+  const [inMarco, setInMarco] = useState(false);
+  const [chosen, setChosen] = useState(false);
   const valid = pax.every((p) => p.given_name.trim() && p.family_name.trim() && p.born_on) && /^\S+@\S+\.\S+$/.test(email) && /^\+\d{8,15}$/.test(intl(phone));
   const title = `${placeName(query.from)} → ${placeName(query.to)} · ${offer.airline.name}`;
+  const payUrl = airlineSite(offer.airline.iata, offer.airline.name);
+  const flights = offer.slices.flatMap((s) => s.segments.map((g) => `${g.flight} ${fmtTime(g.departAt)}`)).join(" · ");
   const detail = `${new Date(query.depart).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}${query.back ? ` – ${new Date(query.back).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : ""} · ${pax.length} voyageur${pax.length > 1 ? "s" : ""}`;
 
   const submit = async () => {
@@ -187,7 +192,32 @@ function FlightBooking({ offer, query, config, onBack }: { offer: FlightOffer; q
         <p className="tiny muted">{offer.refundable ? "Remboursable avant le départ (conditions de la compagnie)." : "Non remboursable."} {offer.changeable ? "Modifiable." : "Non modifiable."}</p>
       </div>
 
-      <div className="card travel-form">
+      <div className="card pay-card">
+        <h3 className="serif">Ton vol est choisi</h3>
+        <p className="small"><strong>{fmtPrice(offer.price, offer.currency)}</strong> pour {offer.passengerIds.length} voyageur{offer.passengerIds.length > 1 ? "s" : ""}, taxes comprises · {offer.airline.name}</p>
+        <p className="tiny muted">À retrouver sur le site de la compagnie : vols {flights}, le {new Date(query.depart).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}{query.back ? ` et le ${new Date(query.back).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : ""}.</p>
+        {config?.demo ? (
+          <p className="tiny demo-banner">Dans la version en ligne, ce bouton t'emmène sur le site de la compagnie pour payer ce vol au prix affiché.</p>
+        ) : null}
+        <a
+          className={`btn btn-primary btn-block ${config?.demo ? "disabled" : ""}`}
+          href={config?.demo ? undefined : payUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => {
+            if (config?.demo || chosen) return;
+            setChosen(true);
+            addTrip({ id: `vol-${Date.now()}`, kind: "vol", title, detail, date: query.depart, reference: "", price: offer.price, currency: offer.currency, payUrl, createdAt: Date.now() });
+          }}
+        >
+          <Icon name="arrowRight" size={18} /> Payer sur le site de {offer.airline.name}
+        </a>
+        {chosen && <p className="tiny muted">C'est noté dans <Link to="/profil" className="link">Mes voyages</Link>, avec le lien pour payer.</p>}
+        {config?.booking && !inMarco && <button className="link small" onClick={() => setInMarco(true)}>Ou réserver directement dans Marco</button>}
+      </div>
+
+      {(inMarco || config?.demo) && <div className="card travel-form">
+        <h3 className="serif">{config?.demo ? "Essayer la réservation dans Marco (démo)" : "Réserver dans Marco"}</h3>
         <h3 className="serif">Voyageurs</h3>
         <p className="tiny muted">Noms exactement comme sur le passeport ou la carte d'identité.</p>
         {pax.map((p, i) => (
@@ -211,7 +241,7 @@ function FlightBooking({ offer, query, config, onBack }: { offer: FlightOffer; q
           {state === "sending" ? "Réservation en cours…" : `Réserver pour ${fmtPrice(offer.price, offer.currency)}`}
         </button>
         <p className="tiny muted">Le billet est émis directement par la compagnie. Tes informations ne servent qu'à cette réservation.</p>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -311,6 +341,8 @@ function StayBooking({ stay, query, config, onBack }: { stay: StayResult; query:
   const [state, setState] = useState<"form" | "sending" | "error">("form");
   const [error, setError] = useState("");
   const [done, setDone] = useState<Confirmation | null>(null);
+  const [inMarco, setInMarco] = useState(false);
+  const [chosen, setChosen] = useState(false);
 
   useEffect(() => {
     stayRooms(stay.id, query).then((r) => (setRooms(r.rooms), setDescription(r.description))).catch(() => setError("Impossible de charger les chambres."));
@@ -362,7 +394,33 @@ function StayBooking({ stay, query, config, onBack }: { stay: StayResult; query:
           ))}
         </div>
       ))}
-      {rate && (
+      {rate && (() => {
+        const payUrl = hotelSite(stay.name, query.city, stay.id.startsWith("demo-") ? stay.id.slice(5) : undefined);
+        return (
+          <div className="card pay-card">
+            <h3 className="serif">Ta chambre est choisie</h3>
+            <p className="small"><strong>{fmtPrice(rate.price, rate.currency)}</strong> · {rate.room} · {BOARD[rate.board] ?? rate.board}</p>
+            <p className="tiny muted">{detail}</p>
+            {config?.demo && <p className="tiny demo-banner">Prix d'exemple dans l'aperçu. Le bouton t'emmène sur le site de l'hébergement, où tu vois le vrai prix et paies.</p>}
+            <a
+              className="btn btn-primary btn-block"
+              href={payUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => {
+                if (chosen) return;
+                setChosen(true);
+                addTrip({ id: `stay-${Date.now()}`, kind: query.kind === "appartement" ? "appartement" : "hotel", title, detail, date: query.checkin, reference: "", price: rate.price, currency: rate.currency, payUrl, demo: config?.demo, createdAt: Date.now() });
+              }}
+            >
+              <Icon name="arrowRight" size={18} /> Payer sur le site de {query.kind === "appartement" ? "l'hébergement" : "l'hôtel"}
+            </a>
+            {chosen && <p className="tiny muted">C'est noté dans <Link to="/profil" className="link">Mes voyages</Link>, avec le lien pour payer.</p>}
+            {(config?.booking || config?.demo) && !inMarco && <button className="link small" onClick={() => setInMarco(true)}>Ou réserver directement dans Marco{config?.demo ? " (démo)" : ""}</button>}
+          </div>
+        );
+      })()}
+      {rate && inMarco && (
         <div className="card travel-form">
           <h3 className="serif">Tes coordonnées</h3>
           <div className="booking-grid">

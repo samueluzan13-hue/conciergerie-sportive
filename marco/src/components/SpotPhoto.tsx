@@ -30,7 +30,7 @@ export function SpotPhoto({ spot, height, rounded = 18, showCredit = false }: { 
     if (!own) googleEnabled().then(setGoogle);
   }, [own]);
 
-  const src = own ?? (google ? `/api/photo?q=${encodeURIComponent(`${spot.name} ${spot.address}`)}` : null);
+  const src = own ?? (google ? `/api/photo?q=${encodeURIComponent(`${spot.name} ${spot.address}`)}&city=${spot.city ?? "paris"}` : null);
   if (!src || failed) return <SpotArt spot={spot} height={height} rounded={rounded} />;
 
   const credit = own ? spot.photoCredit : "Photo : Google Maps";

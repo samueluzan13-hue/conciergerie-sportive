@@ -11,6 +11,7 @@ import type { FlightQuery, StayQuery } from "../lib/booking";
 import { useCloud } from "../lib/cloud";
 import { useCity } from "../lib/store";
 import { AIRPORTS, placeName, toIata } from "../lib/travel";
+import { airbnbUrl } from "../lib/paylinks";
 import { TripPlanner } from "./TripPlanner";
 
 type Tab = "vols" | "hotels" | "appartements" | "sejour";
@@ -177,9 +178,7 @@ function Stays({ kind, incoming }: { kind: "hotel" | "appartement"; incoming: Re
           <Icon name="search" size={18} /> {kind === "hotel" ? "Voir les hôtels disponibles" : "Voir les appartements disponibles"}
         </button>
         {kind === "appartement" && (
-          <p className="tiny muted">
-            Airbnb ne permet à aucune autre application d'afficher ou de réserver ses logements. Marco te propose les appartements et résidences disponibles chez ses partenaires de réservation, réservables ici.
-          </p>
+          <p className="tiny muted">Appartements et résidences des partenaires de réservation de Marco, avec leurs prix. Pour Airbnb, voir juste en dessous.</p>
         )}
       </div>}
 
@@ -189,6 +188,8 @@ function Stays({ kind, incoming }: { kind: "hotel" | "appartement"; incoming: Re
           <StayResults key={JSON.stringify(query)} query={query} preselect={preselect} onPreselected={() => setPreselect(null)} onFocus={setBooking} />
         </>
       )}
+
+      {kind === "appartement" && !booking && <AirbnbCard city={city.name} country={city.country} checkin={checkin} checkout={checkout} adults={adults} />}
 
       {kind === "hotel" && !booking && <HotelSelection cityId={cityId} onBook={(h) => search(h.id, h)} />}
     </section>
@@ -259,4 +260,23 @@ export const voyageParams = (p: Record<string, string | number | undefined>) =>
 export function useVoyageNav() {
   const navigate = useNavigate();
   return (p: Record<string, string | number | undefined>) => navigate(`/voyages?${voyageParams(p)}`);
+}
+
+/** Airbnb n'ouvre pas ses offres aux autres applications : Marco prépare la recherche, l'utilisateur voit les vrais logements et paie sur Airbnb. */
+function AirbnbCard({ city, country, checkin, checkout, adults }: { city: string; country: string; checkin: string; checkout: string; adults: number }) {
+  const [max, setMax] = useState("");
+  const [entire, setEntire] = useState(true);
+  const nights = Math.max(1, Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000));
+  const url = airbnbUrl({ city, country, checkin, checkout, adults, maxPrice: Number(max) || undefined, entire });
+  return (
+    <div className="card travel-form airbnb-card">
+      <h3 className="serif">Airbnb à {city}</h3>
+      <p className="tiny muted">Airbnb ne partage ses logements avec aucune autre application. Marco prépare ta recherche ({nights} nuit{nights > 1 ? "s" : ""}, {adults} voyageur{adults > 1 ? "s" : ""}) : tu vois les vrais logements avec leurs prix, et tu paies sur Airbnb.</p>
+      <div className="booking-grid">
+        <label>Prix max par nuit (€)<input type="number" min={0} inputMode="numeric" value={max} onChange={(e) => setMax(e.target.value)} placeholder="Sans limite" /></label>
+        <label className="check-row"><input type="checkbox" checked={entire} onChange={(e) => setEntire(e.target.checked)} /> Logement entier</label>
+      </div>
+      <a className="btn btn-primary btn-block" href={url} target="_blank" rel="noreferrer"><Icon name="arrowRight" size={18} /> Voir les offres Airbnb et payer sur Airbnb</a>
+    </div>
+  );
 }

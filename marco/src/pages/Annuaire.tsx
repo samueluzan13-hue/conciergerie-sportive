@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { CityPicker } from "../components/CityPicker";
 import { Icon } from "../components/Icon";
 import { PlaceRow } from "../components/PlaceRow";
+import { RelatedPlaces } from "../components/DirectoryHits";
 import { GROUP_ICON, GROUP_LABEL, loadDirectory, parseQuery, searchPlaces, type Group, type Place } from "../lib/annuaire";
 import { useCity } from "../lib/store";
 
@@ -106,9 +107,10 @@ export function Annuaire() {
       {res && (
         <>
           <p className="tiny muted">{res.total.toLocaleString("fr-FR")} adresse{res.total > 1 ? "s" : ""}</p>
-          {res.places.length ? (
+          {res.places.length || res.related.length ? (
             <div className="place-list">
               {res.places.slice(0, shown).map((p) => <PlaceRow key={p.i} place={p} city={city} />)}
+              <RelatedPlaces res={res} city={city} />
             </div>
           ) : (
             <div className="empty">

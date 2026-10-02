@@ -98,7 +98,7 @@ export function Chat() {
       try {
         const all = await Promise.race([loadDirectory(city.id), new Promise<never>((_, no) => setTimeout(() => no(new Error("lent")), 5000))]);
         const found = searchPlaces(all, city, t, { limit: 12 });
-        if (isPlaceQuery(found.parsed) && found.places.length) hint = directoryHint(found, city);
+        if (isPlaceQuery(found.parsed) && (found.places.length || found.related.length)) hint = directoryHint(found, city);
       } catch {
         /* sans répertoire, l'IA répond quand même */
       }

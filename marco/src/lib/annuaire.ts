@@ -240,33 +240,69 @@ const GROUP_WORDS: [Group, RegExp][] = [
 
 /** mot-clé → morceaux de type (taxonomie) à chercher */
 const TYPE_WORDS: [RegExp, string[], Group?][] = [
-  [/\bitalien(ne)?s?\b|\bpates\b/, ["italian", "pizza", "piadina"], "r"],
+  // cuisines du monde (orthographes approximatives acceptées)
+  [/\bitalien|\bpates\b|\bpasta|\btrattoria|\bosteria/, ["italian", "pizza", "piadina"], "r"],
   [/\bpizz/, ["pizza"], "r"],
-  [/\bjaponais|\bsushis?\b|\bramen/, ["japanese", "sushi", "ramen"], "r"],
-  [/\bchinois|\bdim sum|\braviolis?\b/, ["chinese", "cantonese", "sichuan", "dim_sum", "dumpling", "shanghainese"], "r"],
-  [/\bindien/, ["indian"], "r"],
-  [/\blibanais/, ["lebanese"], "r"],
-  [/\bthai/, ["thai"], "r"],
-  [/\bvietnam|\bpho\b|\bbanh/, ["vietnamese"], "r"],
-  [/\bcoreen/, ["korean"], "r"],
-  [/\bmexicain|\btacos?\b/, ["mexican", "taco", "texmex"], "r"],
-  [/\bgrec/, ["greek"], "r"],
-  [/\bmarocain|\bcouscous|\btajine/, ["moroccan"], "r"],
-  [/\bturc|\bkebab/, ["turkish", "doner_kebab"], "r"],
-  [/\bafricain|\bsenegal|\bethiopien/, ["african", "senegalese", "ethiopian", "eritrean", "nigerian"], "r"],
-  [/\bperuvien|\bceviche/, ["peruvian"], "r"],
-  [/\bespagnol|\btapas/, ["spanish", "tapas", "iberian", "catalan", "basque"], "r"],
-  [/\bportugais/, ["portuguese"], "r"],
-  [/\bfrancais|\bbistrot|\bbrasserie/, ["french", "bistro", "brasserie"], "r"],
-  [/\bamericain|\bburgers?\b/, ["american", "burger", "diner"], "r"],
-  [/\bfruits de mer|\bpoissons?\b|\bhuitres/, ["seafood", "fish"], "r"],
-  [/\bviande|\bsteak|\bgrill/, ["steakhouse", "meat", "barbecue", "grill"], "r"],
-  [/\bbrunch|\bpetit[- ]dej/, ["breakfast_and_brunch", "pancake"], "r"],
-  [/\bcrepe/, ["pancake", "creperie"], "r"],
-  [/\bisraelien/, ["israeli", "jewish", "kosher"], "r"],
-  [/\bbresil/, ["brazilian"], "r"],
-  [/\basiatique/, ["asian", "thai", "vietnamese", "chinese", "japanese", "korean"], "r"],
-  [/\bfast[- ]?food|\bsur le pouce|\bsandwich/, ["fast_food", "sandwich", "food_truck", "bagel"], "r"],
+  [/\bjapon|\bsushis?\b|\bmakis?\b|\bramen|\bizakaya|\budon/, ["japanese", "sushi", "ramen"], "r"],
+  [/\bchinois|\bchine\b|\bdim sum|\braviolis?\b|\bcantonais|\bsichuan|\bse-?tchouan|\bcanard laque/, ["chinese", "cantonese", "sichuan", "dim_sum", "dumpling", "shanghainese", "fujian", "hong_kong", "taiwanese"], "r"],
+  [/\bthai|\bthailand|\btailand|\bpad thai/, ["thai"], "r"],
+  [/\bvietnam|\bpho\b|\bbanh|\bbo bun|\bbobun/, ["vietnamese"], "r"],
+  [/\bcoreen|\bcoree\b|\bbibimbap|\bkorean/, ["korean"], "r"],
+  [/\bindien|\binde\b|\bcurry|\btandoori|\bbiryani/, ["indian", "south_asian"], "r"],
+  [/\bpakistan/, ["pakistani"], "r"],
+  [/\bsri[- ]?lank|\btamoul/, ["sri_lankan", "south_indian"], "r"],
+  [/\bnepal|\btibet|\bhimalay/, ["nepalese", "tibetan", "himalayan"], "r"],
+  [/\bcambodg|\bkhmer|\blaos|\blaotien/, ["cambodian", "southeast_asian"], "r"],
+  [/\bphilippin/, ["filipino"], "r"],
+  [/\bindonesi|\bmalais|\bsingapour/, ["indonesian", "malaysian", "singaporean", "southeast_asian"], "r"],
+  [/\bbirman|\bmyanmar/, ["burmese"], "r"],
+  [/\bmongol/, ["mongolian"], "r"],
+  [/\basiat|\basie\b|\bwok/, ["asian", "thai", "vietnamese", "chinese", "japanese", "korean", "cambodian", "malaysian", "indonesian", "filipino", "singaporean", "taiwanese", "wok", "dim_sum", "ramen", "sushi"], "r"],
+  [/\blibanais|\bliban\b|\bmezze/, ["lebanese"], "r"],
+  [/\bsyrien/, ["syrian"], "r"],
+  [/\bpersan|\biran/, ["persian"], "r"],
+  [/\bafghan/, ["afghani"], "r"],
+  [/\bkurde/, ["kurdish"], "r"],
+  [/\boriental|\bmoyen[- ]orient|\bproche[- ]orient|\bfalafels?\b|\bhoumous|\bhummus|\bchawarma|\bshawarma/, ["middle_eastern", "lebanese", "syrian", "israeli", "falafel", "persian", "arabian", "egyptian"], "r"],
+  [/\bmarocain|\bmaroc\b|\bcouscous|\btajine|\bmaghreb|\balgerien|\btunisien|\bberbere/, ["moroccan", "african"], "r"],
+  [/\begypt/, ["egyptian"], "r"],
+  [/\bturc|\bturquie|\bkebab|\bdoner|\bgrec sandwich/, ["turkish", "doner_kebab", "kofta"], "r"],
+  [/\bafricain|\bafrique|\bsenegal|\bethiopi|\berythre|\bnigeria|\bivoirien|\bcamerou|\bmafe|\byassa|\bthieb/, ["african", "senegalese", "ethiopian", "eritrean", "nigerian", "west_african", "east_african", "south_african"], "r"],
+  [/\bantillais|\bcreole|\bcaribe|\bjamaic|\bhaiti|\bguadeloup|\bmartiniqu|\breunion/, ["caribbean", "cajun_and_creole", "jamaican", "haitian", "trinidadian", "puerto_rican", "dominican"], "r"],
+  [/\bgrec|\bgrece\b|\bgyros|\bsouvlaki/, ["greek"], "r"],
+  [/\bisraelien|\bisrael\b/, ["israeli", "jewish", "kosher"], "r"],
+  [/\bjuif|\bashkenaze|\bsefarade|\bdeli juif|\bbagels?\b/, ["jewish", "kosher", "israeli", "bagel", "delicatessen"], "r"],
+  [/\bgeorgien/, ["georgian"], "r"],
+  [/\barmenien/, ["armenian"], "r"],
+  [/\brusse|\bukrainien|\bpolonais|\btcheque|\bhongrois|\broumain|\bbulgare|\bserbe|\bcroate|\bslave|\bpays de l'est/, ["russian", "ukrainian", "polish", "czech", "hungarian", "romanian", "bulgarian", "serbo_croatian", "eastern_european"], "r"],
+  [/\bouzbek|\btatar|\bazerbaidj/, ["uzbek", "tatar", "azerbaijani"], "r"],
+  [/\bmexicain|\bmexique|\btacos?\b|\bburritos?|\btex[- ]?mex/, ["mexican", "taco", "texmex"], "r"],
+  [/\bperou|\bperuvien|\bceviche/, ["peruvian"], "r"],
+  [/\bbresil|\bargentin|\bcolombi|\bvenezuel|\bchilien|\bcubain|\bcuba\b|\blatino|\bamerique latine|\bsud[- ]americain|\bempanadas?/, ["brazilian", "argentine", "colombian", "venezuelan", "chilean", "cuban", "latin_american", "south_american", "empanada", "uruguayan", "ecuadorian", "bolivian", "salvadoran"], "r"],
+  [/\bespagnol|\bespagne\b|\btapas|\bpaella/, ["spanish", "tapas", "iberian", "catalan", "basque"], "r"],
+  [/\bbasque|\bpintxos/, ["basque"], "r"],
+  [/\bcatalan/, ["catalan"], "r"],
+  [/\bportugais|\bportugal\b|\bbacalhau/, ["portuguese"], "r"],
+  [/\bfrancais|\bbistrot|\bbrasserie|\btraditionnel/, ["french", "bistro", "brasserie"], "r"],
+  [/\ballemand|\bbavarois|\bcurrywurst/, ["german", "curry_sausage", "austrian"], "r"],
+  [/\bautrichien|\bsuisse|\bfondue|\braclette/, ["austrian", "swiss", "fondue"], "r"],
+  [/\bbelge|\bfrites?\b/, ["belgian", "friterie"], "r"],
+  [/\banglais|\bbritannique|\bfish and chips|\birlandais|\becossais/, ["british", "irish", "scottish", "fish_and_chips", "gastropub"], "r"],
+  [/\bscandinave|\bsuedois|\bdanois|\bnordique/, ["scandinavian"], "r"],
+  [/\bamericain|\bburgers?\b|\bbbq|\bbarbecue|\bsmokehouse/, ["american", "burger", "diner", "barbecue", "southern_american", "soul_food", "cheesesteak", "hot_dog"], "r"],
+  [/\bhawai|\bpoke/, ["hawaiian", "poke"], "r"],
+  [/\bmediterran/, ["mediterranean", "greek", "lebanese"], "r"],
+  [/\bfruits de mer|\bpoissons?\b|\bhuitres|\bcrustace/, ["seafood", "fish"], "r"],
+  [/\bviande|\bsteak|\bgrill|\bboucher/, ["steakhouse", "meat", "barbecue", "bar_and_grill"], "r"],
+  [/\bpoulet|\bchicken|\bwings/, ["chicken"], "r"],
+  [/\bbrunch|\bpetit[- ]dej|\bbreakfast/, ["breakfast_and_brunch", "pancake"], "r"],
+  [/\bcrepe|\bgalette|\bbreton/, ["pancake", "creperie"], "r"],
+  [/\bsoupe/, ["soup"], "r"],
+  [/\bsalade|\bhealthy|\bbowl/, ["salad", "health_food", "poke", "acai"], "r"],
+  [/\bbuffet|\ba volonte/, ["buffet"], "r"],
+  [/\bfusion/, ["fusion"], "r"],
+  [/\bgastronomique|\betoile|\bmichelin|\bgastro\b/, ["molecular_gastronomy", "french"], "r"],
+  [/\bfast[- ]?food|\bsur le pouce|\bsandwich|\bstreet[- ]?food|\bfood ?truck/, ["fast_food", "sandwich", "food_truck", "bagel", "hot_dog", "falafel", "doner_kebab", "taco"], "r"],
   [/\bbar a vins?|\bvins?\b/, ["wine_bar"], "b"],
   [/\bbieres?|\bpub/, ["beer_bar", "pub", "irish_pub", "gastropub"], "b"],
   [/\bcocktails?/, ["cocktail_bar", "speakeasy"], "b"],
@@ -306,8 +342,8 @@ const TYPE_WORDS: [RegExp, string[], Group?][] = [
 ];
 
 const TAG_WORDS: [RegExp, string][] = [
-  [/\b(casher|cacher|kasher|kosher|cachere|cashere)\b/, "casher"],
-  [/\bhalal\b/, "halal"],
+  [/\b(casher|cacher|kasher|kosher|cachere|cashere|kacher|kocher|cachir|glatt)\b/, "casher"],
+  [/\b(halal|hallal|halel|hallel)\b/, "halal"],
   [/\b(vegan|vegane|vegetalien)\b/, "vegan"],
   [/\b(vegetarien|vegetarienne|vege|veggie)\b/, "vegetarien"],
   [/\bsans gluten\b/, "sans-gluten"],
@@ -342,8 +378,9 @@ export function parseQuery(text: string, city: City): ParsedQuery {
   }
   let groups = GROUP_WORDS.filter(([, rx]) => rx.test(t)).map(([g]) => g);
   // « cours de danse », « atelier peinture » : on reste sur les cours ; un régime alimentaire = un resto
+  // un type reconnu (« crêpes », « tapas ») ajoute sa famille : une crêperie est un resto même si « crêpes » évoque le goûter
+  groups = [...new Set([...groups, ...typeGroups])];
   if (groups.includes("k")) groups = groups.filter((g) => g === "k" || (g !== "s" && g !== "a" && g !== "r" && g !== "n"));
-  if (!groups.length && typeGroups.length) groups = [...new Set(typeGroups)];
   if (!groups.length && tags.length) groups = ["r"];
   const arr = city.id === "paris" ? arrFromText(text) : null;
   const zones = city.id === "paris" ? QUARTIERS : city.districts;
@@ -375,7 +412,15 @@ export interface SearchResult {
   places: Place[];
   total: number;
   parsed: ParsedQuery;
+  /** cuisines où le halal / casher est fréquent, à vérifier (quand les adresses certifiées sont rares) */
+  related: Place[];
+  likely?: string;
 }
+
+const LIKELY: Record<string, string[]> = {
+  halal: ["turkish", "doner_kebab", "kofta", "lebanese", "syrian", "moroccan", "middle_eastern", "arabian", "persian", "afghani", "pakistani", "kurdish", "egyptian", "falafel", "senegalese", "bangladeshi"],
+  casher: ["israeli", "jewish"],
+};
 
 export function searchPlaces(all: Place[], city: City, text: string, opts: { group?: Group | "all"; arr?: number; district?: string; limit?: number } = {}): SearchResult {
   const parsed = parseQuery(text, city);
@@ -396,11 +441,13 @@ export function searchPlaces(all: Place[], city: City, text: string, opts: { gro
       if (d > 1.6) continue;
       s += 2 - d;
     }
-    if (parsed.types.length) {
-      if (!parsed.types.some((ty) => p.type.includes(ty))) continue;
-      s += p.type.includes(parsed.types[0]) ? 4 : 3;
-    }
     const nn = norm(p.name);
+    if (parsed.types.length) {
+      // la bonne cuisine, ou un nom qui l'annonce (« Thaï Express », « Crêperie de Josselin »)
+      if (parsed.types.some((ty) => p.type.includes(ty))) s += p.type.includes(parsed.types[0]) ? 4 : 3;
+      else if (parsed.keys.some((k) => k.length > 3 && nn.includes(k.slice(0, Math.max(4, k.length - 2))))) s += 2;
+      else continue;
+    }
     if (parsed.keys.some((k) => nn.includes(k))) s += 2;
     if (nn.length > 6 && parsed.text.includes(nn)) s += 8;
     if (words.length) {
@@ -417,17 +464,33 @@ export function searchPlaces(all: Place[], city: City, text: string, opts: { gro
     scored.push({ p, s });
   }
   scored.sort((a, b) => b.s - a.s || sortName(a.p.name).localeCompare(sortName(b.p.name), "fr"));
-  return { places: scored.slice(0, opts.limit ?? 60).map((x) => x.p), total: scored.length, parsed };
+  // halal / casher : l'annuaire ne signale pas toujours la certification ; s'il y a peu de réponses sûres,
+  // on ajoute les cuisines où c'est fréquent, signalées « à vérifier »
+  let related: Place[] = [];
+  const diet = parsed.tags.find((t) => t in LIKELY);
+  if (diet && scored.length < 25) {
+    const seen = new Set(scored.map((x) => x.p.i));
+    related = all
+      .filter((p) => p.group === "r" && !seen.has(p.i) && LIKELY[diet].some((ty) => p.type.includes(ty)))
+      .filter((p) => (!arr || arrOf(p) === arr) && (!zone || distanceKm(p, zone) <= 1.6))
+      .filter((p) => !parsed.types.length || parsed.types.some((ty) => p.type.includes(ty)))
+      .sort((a, b) => (zone ? distanceKm(a, zone) - distanceKm(b, zone) : 0) || Number(!!b.web) - Number(!!a.web))
+      .slice(0, 12);
+  }
+  return { places: scored.slice(0, opts.limit ?? 60).map((x) => x.p), total: scored.length, parsed, related, likely: diet };
 }
 
 /** Résumé pour l'IA : de vraies adresses issues du répertoire, pour qu'elle s'appuie dessus. */
 export function directoryHint(r: SearchResult, city: City, max = 12) {
-  if (!r.places.length) return "";
+  if (!r.places.length && !r.related.length) return "";
   const lines = r.places.slice(0, max).map((p) => {
     const bits = [placeKind(p), [p.address, p.postcode].filter(Boolean).join(" "), p.web && !isSocial(p) ? p.web : "", p.phone, p.tags.join("/")].filter(Boolean);
     return `- ${p.name} (${bits.join(" · ")})`;
   });
-  return `RÉPERTOIRE MARCO (${r.total} adresses correspondantes à ${city.name} dans l'annuaire complet ; voici les premières, utilise-les en priorité et vérifie les horaires si tu peux) :\n${lines.join("\n")}`;
+  const rel = r.related.slice(0, 8).map((p) => `- ${p.name} (${placeKind(p)} · ${[p.address, p.postcode].filter(Boolean).join(" ")}) — ${r.likely} probable, À VÉRIFIER`);
+  return `RÉPERTOIRE MARCO (${r.total} adresses correspondantes à ${city.name} dans l'annuaire complet ; voici les premières, utilise-les en priorité et vérifie les horaires si tu peux) :\n${lines.join("\n")}${
+    rel.length ? `\nCuisines où c'est souvent ${r.likely}, sans certification connue (présente-les comme « à vérifier sur place ») :\n${rel.join("\n")}` : ""
+  }`;
 }
 
 export const cityOf = (id: string) => cityById(id);

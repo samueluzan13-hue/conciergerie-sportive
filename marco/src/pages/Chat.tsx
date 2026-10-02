@@ -10,7 +10,8 @@ import { aiIssue, askMarco, checkAi, type ChatMessage } from "../lib/ai";
 import { aiPermission, requestAi } from "../lib/cloud";
 import { log } from "../lib/diag";
 import { isGenericReply, lastLocalWasStrong, localReply } from "../lib/localBrain";
-import { parseReply } from "../lib/meta";
+import { guessBooking, parseReply } from "../lib/meta";
+import { citySpots } from "../data/spots";
 import { remember, savePlan, useCity, useStore } from "../lib/store";
 import { directoryHint, isPlaceQuery, loadDirectory, searchPlaces } from "../lib/annuaire";
 import { DirectoryHits } from "../components/DirectoryHits";
@@ -192,7 +193,9 @@ export function Chat() {
                   )}
                 </div>
               </div>
-              {meta.resa && <BookingCard draft={meta.resa} />}
+              {(meta.resa ?? (i > 0 && messages[i - 1].role === "user" ? guessBooking(messages[i - 1].content, citySpots(city.id)) : null)) && (
+                <BookingCard draft={(meta.resa ?? guessBooking(messages[i - 1].content, citySpots(city.id)))!} />
+              )}
               {i > 0 && messages[i - 1].role === "user" && <DirectoryHits text={messages[i - 1].content} />}
               {meta.flight && <FlightCard s={meta.flight} />}
               {i === lastAi && (

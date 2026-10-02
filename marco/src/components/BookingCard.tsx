@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { spotById } from "../data/spots";
-import { requestBooking, useCloud } from "../lib/cloud";
+import { newCode, requestBooking, track, useCloud } from "../lib/cloud";
+import { withUtm } from "../lib/partners";
 import { log } from "../lib/diag";
 import type { BookingDraft } from "../lib/meta";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
@@ -51,7 +52,9 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
   const spot = draft.spotId ? spotById(draft.spotId) : undefined;
   const direct = spot ? reserveUrl(spot) : duckyUrl(draft.place);
   const valid = name.trim().length > 1 && /\d{6,}/.test(phone.replace(/\D/g, "")) && date >= today() && /^\d{2}:\d{2}$/.test(time);
-  const canAsk = voice || (cloud.db && !!cloud.userId && cloud.canWrite);
+  // on peut toujours réserver : avec la base, l'équipe Marco s'en charge ; sans, le client garde son code Marco et termine lui-même
+  const canAsk = true;
+  const online = voice || (cloud.db && !!cloud.userId && cloud.canWrite);
 
   const submit = async () => {
     if (!valid) return;
@@ -67,6 +70,14 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
         log("voice:error", e);
         setState("error");
       }
+      return;
+    }
+    if (!online) {
+      const c = newCode();
+      addBooking({ id: `l${Date.now().toString(36)}`, place: draft.place, spotId: draft.spotId, date, time, people, status: "en_attente", code: c });
+      track({ placeKey: draft.spotId ? `spot:${draft.spotId}` : `nom:${draft.place.toLowerCase()}`, place: draft.place, city: spot?.city ?? "paris", action: "reserver" });
+      setCode(c);
+      setState("sent");
       return;
     }
     try {
@@ -115,10 +126,16 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
   if (state === "sent")
     return (
       <div className="booking-card sent">
-        <p className="booking-title"><Icon name="check" size={16} /> Demande envoyée à l'équipe Marco</p>
+        <p className="booking-title"><Icon name="check" size={16} /> {online ? "Demande envoyée à l'équipe Marco" : "Ta réservation Marco est prête"}</p>
         <p className="small">{draft.place} · {when} à {time} · {people} pers.</p>
         {code && <p className="voucher">Ton code Marco : <strong>{code}</strong><span className="tiny">Montre-le en arrivant</span></p>}
-        <p className="tiny muted">On réserve pour toi et tu reçois la confirmation ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>
+        {!online && (
+          <>
+            <p className="tiny muted">Dernière étape : réserve sur le site du lieu (ou appelle-le) et donne ton code Marco.</p>
+            <a className="btn btn-primary btn-block" href={withUtm(direct)} target="_blank" rel="noreferrer">Finaliser sur le site du lieu</a>
+          </>
+        )}
+        {online && <p className="tiny muted">On réserve pour toi et tu reçois la confirmation ici et dans <Link to="/profil" className="link">Profil › Mes réservations</Link>.</p>}
       </div>
     );
 
@@ -136,7 +153,7 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
           <label>Téléphone (pour la confirmation du restaurant)<input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="06 12 34 56 78" /></label>
           <label>Précisions (facultatif)<input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Terrasse, anniversaire, poussette…" /></label>
           <button className="btn btn-primary btn-block" disabled={!valid || state === "sending"} onClick={submit}>
-            {state === "sending" ? "Envoi…" : voice ? "Confirmer, Marco appelle le restaurant" : "Confirmer, Marco s'en occupe"}
+            {state === "sending" ? "Envoi…" : voice ? "Confirmer, Marco appelle le restaurant" : online ? "Confirmer, Marco s'en occupe" : "Confirmer et recevoir mon code Marco"}
           </button>
           {state === "error" && <p className="tiny error-text">{voice ? "Marco n'a pas pu lancer l'appel (numéro du restaurant introuvable ou appel déjà fait). Réserve directement ci-dessous." : "La demande n'est pas partie. Réessaie, ou réserve directement ci-dessous."}</p>}
           <p className="tiny muted">

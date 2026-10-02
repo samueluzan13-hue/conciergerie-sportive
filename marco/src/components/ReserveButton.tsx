@@ -136,6 +136,7 @@ function ReserveSheet({ target: t, onClose }: { target: ReserveTarget; onClose: 
             <button className="btn btn-primary btn-block" disabled={!valid || state === "sending"} onClick={submit}>
               {state === "sending" ? "Envoi…" : "Confirmer, Marco s'en occupe"}
             </button>
+            {!valid && <p className="tiny error-text">{name.trim().length < 2 ? "Ajoute le nom de la réservation." : !/\d{6,}/.test(phone.replace(/\D/g, "")) ? "Ajoute ton numéro de téléphone pour que le lieu puisse confirmer." : "Vérifie la date."}</p>}
             <p className="tiny muted">Tu reçois un code Marco à montrer en arrivant. Rien à payer ici.</p>
           </>
         )}

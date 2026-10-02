@@ -9,6 +9,7 @@ import { useCloud } from "./lib/cloud";
 import { layoutSnapshot, log } from "./lib/diag";
 import { connectCloud, setState, useStore } from "./lib/store";
 import { Admin } from "./pages/Admin";
+import { Annuaire } from "./pages/Annuaire";
 import { MapPage } from "./pages/MapPage";
 import { Nights } from "./pages/Nights";
 import { Propose } from "./pages/Propose";
@@ -80,6 +81,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/explorer" element={<Explorer />} />
+                    <Route path="/annuaire" element={<Annuaire />} />
                     <Route path="/marco" element={<Chat />} />
                     <Route path="/carte" element={<MapPage />} />
                     <Route path="/profil" element={<Profile />} />

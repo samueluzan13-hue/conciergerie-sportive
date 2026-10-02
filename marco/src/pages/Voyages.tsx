@@ -11,7 +11,10 @@ import type { FlightQuery, StayQuery } from "../lib/booking";
 import { useCloud } from "../lib/cloud";
 import { useCity } from "../lib/store";
 import { AIRPORTS, placeName, toIata } from "../lib/travel";
-import { airbnbUrl } from "../lib/paylinks";
+import { airbnbUrl, hotelSite } from "../lib/paylinks";
+import { loadDirectory, searchPlaces, type Place } from "../lib/annuaire";
+import { distanceKm } from "../lib/geo";
+import { PlaceRow, type Stay } from "../components/PlaceRow";
 import { TripPlanner } from "./TripPlanner";
 
 type Tab = "vols" | "hotels" | "appartements" | "sejour";
@@ -191,6 +194,8 @@ function Stays({ kind, incoming }: { kind: "hotel" | "appartement"; incoming: Re
 
       {kind === "appartement" && !booking && <AirbnbCard city={city.name} country={city.country} checkin={checkin} checkout={checkout} adults={adults} />}
 
+      {kind === "hotel" && !booking && <AllHotels cityId={cityId} stay={{ checkin, checkout, adults, rooms }} />}
+
       {kind === "hotel" && !booking && <HotelSelection cityId={cityId} onBook={(h) => search(h.id, h)} />}
     </section>
   );
@@ -247,9 +252,70 @@ function HotelSelection({ cityId, onBook }: { cityId: CityId; onBook: (h: Spot) 
           </div>
           <div className="hotel-actions">
             <button className="btn-mini primary" onClick={() => onBook(h)}>Voir les chambres et réserver</button>
+            <a className="btn-mini" href={hotelSite(h.name, cityId, h.id)} target="_blank" rel="noreferrer">Site de l'hôtel</a>
           </div>
         </article>
       ))}
+    </section>
+  );
+}
+
+const frDate = (d?: string) => (d ? new Date(`${d}T12:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "");
+
+const LODGING: [string, string, (t: string) => boolean][] = [
+  ["", "Tous", () => true],
+  ["hotel", "Hôtels", (t) => t === "hotel" || t === "motel" || t === "lodging" || t === "lodge"],
+  ["bnb", "Chambres d'hôtes", (t) => t === "bed_and_breakfast"],
+  ["hostel", "Auberges", (t) => t === "hostel"],
+  ["appart", "Appart-hôtels", (t) => t === "service_apartment" || t === "self_catering_accommodation" || t === "cottage"],
+];
+
+/** Tous les hôtels de la ville (répertoire complet), chacun avec son lien direct pour réserver la chambre. */
+function AllHotels({ cityId, stay }: { cityId: CityId; stay: Stay }) {
+  const city = cityById(cityId);
+  const [all, setAll] = useState<Place[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("");
+  const [zone, setZone] = useState("");
+  const [shown, setShown] = useState(25);
+  useEffect(() => {
+    setAll(null);
+    setFailed(false);
+    loadDirectory(cityId).then((l) => setAll(l.filter((p) => p.group === "h")), () => setFailed(true));
+  }, [cityId]);
+  useEffect(() => setShown(25), [q, kind, zone, cityId]);
+  const list = useMemo(() => {
+    if (!all) return [];
+    const test = LODGING.find(([k]) => k === kind)![2];
+    const z = city.districts.find((d) => d.name === zone);
+    const arr = cityId === "paris" ? Number(zone) || 0 : 0;
+    return searchPlaces(all.filter((p) => test(p.type)), city, q, { group: "h", arr, limit: 5000 }).places.filter((p) => !z || distanceKm(p, z) < 1.4);
+  }, [all, q, kind, zone, city, cityId]);
+  if (failed) return null;
+  return (
+    <section className="stack">
+      <h2 className="serif section-title">Tous les hôtels de {city.name}{all ? ` (${all.length.toLocaleString("fr-FR")})` : ""}</h2>
+      <p className="tiny muted">Choisis ton hôtel et réserve ta chambre directement sur son site officiel, aux dates choisies plus haut. Pas de site ? Marco t'ouvre la page de l'hôtel avec ses prix du {frDate(stay.checkin)} au {frDate(stay.checkout)}.</p>
+      <form className="search" onSubmit={(e) => e.preventDefault()}>
+        <Icon name="search" size={18} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom de l'hôtel, rue…" aria-label="Chercher un hôtel" />
+      </form>
+      <div className="chip-grid">
+        {LODGING.map(([k, label]) => <button key={k} className={`chip small ${kind === k ? "on" : ""}`} onClick={() => setKind(k)}>{label}</button>)}
+        <select className="chip chip-select small" value={zone} onChange={(e) => setZone(e.target.value)} aria-label="Quartier">
+          <option value="">{cityId === "paris" ? "Tous les arrondissements" : "Tous les quartiers"}</option>
+          {cityId === "paris"
+            ? Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n === 1 ? "1er" : `${n}e`}</option>)
+            : city.districts.map((d) => <option key={d.name} value={d.name}>{d.name}</option>)}
+        </select>
+      </div>
+      {!all && <p className="small muted">Chargement des hôtels…</p>}
+      {all && <p className="tiny muted">{list.length.toLocaleString("fr-FR")} hébergement{list.length > 1 ? "s" : ""}</p>}
+      <div className="place-list">
+        {list.slice(0, shown).map((p) => <PlaceRow key={p.i} place={p} city={city} stay={stay} />)}
+      </div>
+      {shown < list.length && <button className="btn btn-soft btn-block" onClick={() => setShown(shown + 25)}>Voir plus d'hôtels</button>}
     </section>
   );
 }

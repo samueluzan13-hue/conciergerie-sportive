@@ -55,7 +55,7 @@ export async function handleMarco(method: string, raw: string): Promise<{ status
     // si le tour est mis en pause (trop de recherches d'un coup), on le relance tel quel.
     const system: Anthropic.Beta.BetaTextBlockParam[] = [
       { type: "text", text: `${marcoInstructions(body.profile?.city)}\n\n${LIVE_NOTE}`, cache_control: { type: "ephemeral" } },
-      { type: "text", text: `${nowNote()} ${profileNote(body.profile)}${typeof body.hint === "string" ? `\n\n${body.hint.slice(0, 300)}` : ""}` },
+      { type: "text", text: `${nowNote()} ${profileNote(body.profile)}${typeof body.hint === "string" ? `\n\n${body.hint.slice(0, 4000)}` : ""}` },
     ];
     const convo: Anthropic.Beta.BetaMessageParam[] = messages;
     const textOf = (r: Anthropic.Beta.BetaMessage) => r.content.map((b) => (b.type === "text" ? b.text : "")).join("");

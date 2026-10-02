@@ -26,9 +26,11 @@ const actions = (city: string, paris: boolean) => [
   { to: "/planner", icon: "calendar", title: "Planifier", sub: "Ma journée sur-mesure" },
   { to: "/rues", icon: "book", title: "Une rue", sub: "Son histoire, ses potins" },
   { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: paris ? "La nuit, arrondissement par arrondissement" : "La nuit, quartier par quartier" },
-  { to: "/explorer?cat=resto", icon: "heart", title: "Où manger", sub: `Des restos dans tout ${city}` },
-  { to: "/explorer?cat=activite", icon: "sparkles", title: "Activités", sub: "Ateliers, bateau, sport, insolite" },
-  { to: "/voyages", icon: "bed", title: "Dormir", sub: "Hôtels et appartements" },
+  { to: "/annuaire?g=r", icon: "heart", title: "Où manger", sub: `Tous les restos de ${city}` },
+  { to: "/annuaire?g=b", icon: "star", title: "Boire un verre", sub: "Tous les bars, pubs, bars à vin" },
+  { to: "/annuaire?g=a", icon: "sparkles", title: "Activités", sub: "Musées, expos, parcs, sorties" },
+  { to: "/annuaire?g=s", icon: "walk", title: "Sport & cours", sub: "Salles, yoga, ateliers, danse" },
+  { to: "/voyages?tab=hotels", icon: "bed", title: "Dormir", sub: "Tous les hôtels, réservation directe" },
 ];
 
 function greeting() {

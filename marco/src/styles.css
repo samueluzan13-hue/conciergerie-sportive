@@ -559,7 +559,7 @@ button.marco-card { text-align: left; width: 100%; }
 .hotel-art { width: 84px; flex-shrink: 0; }
 .hotel-main p { margin: 2px 0 0; }
 .hotel-pitch { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-.hotel-actions { display: flex; gap: 8px; }
+.hotel-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .hotel-actions .btn-mini { flex: 1; text-align: center; text-decoration: none; }
 .flight-results { display: flex; flex-direction: column; gap: 10px; }
 .flight-results p { margin: 0; }
@@ -626,3 +626,20 @@ button.marco-card { text-align: left; width: 100%; }
 .pay-card p { margin: 0; }
 .btn.disabled { opacity: .5; pointer-events: none; }
 .airbnb-card { border: 1.5px solid #ff5a5f; }
+
+/* Répertoire complet */
+.annuaire-lead { margin: -4px 0 4px; }
+.annuaire-credit { margin-top: 18px; }
+.place-list { display: flex; flex-direction: column; gap: 10px; }
+.place-row { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 11px 12px; display: flex; flex-direction: column; gap: 9px; box-shadow: var(--shadow); min-width: 0; }
+.place-main { display: flex; gap: 10px; min-width: 0; }
+.place-main strong { display: block; overflow-wrap: anywhere; }
+.place-main p { margin: 2px 0 0; }
+.place-ico { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: var(--sand); display: grid; place-items: center; font-size: 17px; }
+.place-addr { color: var(--ink-2); overflow-wrap: anywhere; }
+.place-tag { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 99px; background: var(--orange-soft); color: var(--orange); font-weight: 700; font-size: 11px; }
+.place-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.place-actions .btn-mini { text-decoration: none; }
+.dir-card { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 6px 38px; }
+.dir-card h4 { margin: 0; font-size: 14px; }
+.dir-entry { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }

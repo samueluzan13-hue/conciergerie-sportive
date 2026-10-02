@@ -11,7 +11,9 @@ import { aiPermission, requestAi } from "../lib/cloud";
 import { log } from "../lib/diag";
 import { isGenericReply, lastLocalWasStrong, localReply } from "../lib/localBrain";
 import { parseReply } from "../lib/meta";
-import { remember, savePlan, useStore } from "../lib/store";
+import { remember, savePlan, useCity, useStore } from "../lib/store";
+import { directoryHint, isPlaceQuery, loadDirectory, searchPlaces } from "../lib/annuaire";
+import { DirectoryHits } from "../components/DirectoryHits";
 
 const QUICK = [
   "J'ai 3 heures à Paris",
@@ -26,6 +28,7 @@ const KEY = "marco.chat.v1";
 
 export function Chat() {
   const name = useStore((s) => s.profile.name);
+  const city = useCity();
   const [params, setParams] = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -89,8 +92,19 @@ export function Chat() {
     log("chat:local", { strong, aiOn });
     // 2. L'IA (Claude, sous le nom de Marco) répond à tout ; si elle n'est pas disponible, la base prend le relais.
     let reply: string | null = null;
+    // 1 bis. Le répertoire complet de la ville : de vraies adresses à donner à l'IA (casher 17e, yoga à Gràcia…)
+    let hint: string | undefined;
+    if (aiOn) {
+      try {
+        const all = await Promise.race([loadDirectory(city.id), new Promise<never>((_, no) => setTimeout(() => no(new Error("lent")), 5000))]);
+        const found = searchPlaces(all, city, t, { limit: 12 });
+        if (isPlaceQuery(found.parsed) && found.places.length) hint = directoryHint(found, city);
+      } catch {
+        /* sans répertoire, l'IA répond quand même */
+      }
+    }
     try {
-      if (aiOn) reply = await askMarco(next, { onText: setLive, alreadyShown: strong ? local : undefined });
+      if (aiOn) reply = await askMarco(next, { onText: setLive, alreadyShown: strong ? local : undefined, hint });
       else await new Promise((r) => setTimeout(r, 300));
     } catch (e) {
       log("chat:error", e);
@@ -179,6 +193,7 @@ export function Chat() {
                 </div>
               </div>
               {meta.resa && <BookingCard draft={meta.resa} />}
+              {i > 0 && messages[i - 1].role === "user" && <DirectoryHits text={messages[i - 1].content} />}
               {meta.flight && <FlightCard s={meta.flight} />}
               {i === lastAi && (
                 <div className="follow-ups">

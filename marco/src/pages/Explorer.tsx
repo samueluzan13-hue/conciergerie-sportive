@@ -93,7 +93,13 @@ export function Explorer() {
         )}
       </div>
 
-      <p className="tiny muted">{results.length} adresse{results.length > 1 ? "s" : ""}</p>
+      <Link to={`/annuaire${query ? `?q=${encodeURIComponent(query)}` : cat === "resto" ? "?g=r" : cat === "bar" ? "?g=b" : cat === "cafe" ? "?g=c" : cat === "hotel" ? "?g=h" : ""}`} className="propose-card">
+        <Icon name="compass" size={20} />
+        <div className="grow"><strong>Tout {city.name} : toutes les adresses</strong><p className="small muted">Ici, la sélection de Marco. Le répertoire complet a tous les restos, bars, activités et hôtels, avec réservation en un clic.</p></div>
+        <Icon name="arrowRight" size={18} />
+      </Link>
+
+      <p className="tiny muted">{results.length} adresse{results.length > 1 ? "s" : ""} dans la sélection</p>
       {results.length ? (
         <div className="grid-2">
           {results.map((s) => <SpotCard key={s.id} spot={s} />)}
@@ -101,6 +107,7 @@ export function Explorer() {
       ) : (
         <div className="empty">
           <p className="serif">Rien dans ma sélection pour « {query} ».</p>
+          <button className="btn btn-soft" onClick={() => navigate(`/annuaire?q=${encodeURIComponent(query)}`)}>Chercher dans tout {city.name}</button>
           <button className="btn btn-primary" onClick={() => navigate(`/marco?q=${encodeURIComponent(query)}`)}>
             <Icon name="sparkles" size={18} /> Demander à Marco
           </button>

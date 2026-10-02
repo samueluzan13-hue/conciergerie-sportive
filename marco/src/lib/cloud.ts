@@ -79,6 +79,8 @@ export interface Booking {
   checkout: string;
   /** le client est bien venu (validé par l'établissement ou l'équipe) */
   honored: boolean;
+  /** SMS de réponse envoyé au client */
+  smsAt: number;
 }
 
 /** Un geste d'un utilisateur vers un lieu (réserver, appeler, itinéraire, site) : la preuve du trafic apporté. */
@@ -320,7 +322,7 @@ function toBooking(id: string, x: Record<string, unknown>): Booking | null {
     reponse: str(x.reponse, 400), createdAt: num(x.createdAt),
     code: str(x.code, 12), placeKey: str(x.placeKey, 160) || (str(x.spotId, 80) ? `spot:${str(x.spotId, 80)}` : `nom:${place.toLowerCase()}`),
     city: str(x.city, 20) || "paris", kind: str(x.kind, 20) || "table", address: str(x.address, 200),
-    checkout: str(x.checkout, 10), honored: x.honored === true,
+    checkout: str(x.checkout, 10), honored: x.honored === true, smsAt: num(x.smsAt),
   };
 }
 
@@ -335,7 +337,7 @@ const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const newCode = () => `M-${Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join("")}`;
 
 /** Envoie la demande à l'équipe Marco. Renvoie l'identifiant, ou lève une erreur si la base refuse. */
-export type BookingInput = Omit<Booking, "id" | "userId" | "status" | "reponse" | "createdAt" | "code" | "honored" | "placeKey" | "city" | "kind" | "address" | "checkout"> &
+export type BookingInput = Omit<Booking, "id" | "userId" | "status" | "reponse" | "createdAt" | "code" | "honored" | "smsAt" | "placeKey" | "city" | "kind" | "address" | "checkout"> &
   Partial<Pick<Booking, "placeKey" | "city" | "kind" | "address" | "checkout" | "code">>;
 
 /** Envoie la demande à l'équipe Marco. Renvoie l'identifiant et le code client, ou lève une erreur si la base refuse. */
@@ -350,6 +352,10 @@ export async function requestBooking(b: BookingInput): Promise<{ id: string; cod
   });
   log("resa:envoyee", id);
   return { id, code };
+}
+
+export async function markSmsSent(id: string) {
+  await dbRef?.collection("reservations").doc(id).update({ smsAt: Date.now() });
 }
 
 /** L'établissement a confirmé que le client est venu (code présenté). */

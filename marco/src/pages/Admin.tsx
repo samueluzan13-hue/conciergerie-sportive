@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { CATEGORY_LABEL, MOOD_LABEL, QUARTIERS, SPOTS, spotById, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
 import { CITIES, type CityId } from "../data/cities";
-import { answerBooking, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
+import { answerBooking, markSmsSent, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
+import { bookingSms, sendSms, smsConfig, smsLink } from "../lib/sms";
 import { ACTION_LABEL, partnerReport, partnerStats } from "../lib/partners";
 
 type Tab = "lieux" | "rues" | "propositions" | "reservations" | "partenaires";
@@ -19,11 +20,42 @@ const EMPTY_STREET: StreetStory = {
 };
 
 /** Bouton de suppression en deux temps (les boîtes de confirmation du navigateur ne sont pas disponibles partout). */
-/** Une demande de réservation : l'équipe appelle ou réserve en ligne, puis répond à l'utilisateur. */
+/** Une demande de réservation : l'équipe appelle ou réserve, répond, puis prévient le client par SMS. */
 function BookingRow({ b }: { b: Booking }) {
   const [msg, setMsg] = useState(b.reponse);
+  const [sms, setSms] = useState<{ status: "confirmee" | "impossible"; text: string } | null>(null);
+  const [sent, setSent] = useState<"" | "envoi" | "ok" | string>("");
+  const [auto, setAuto] = useState(false);
+  const [key, setKey] = useState(() => {
+    try {
+      return localStorage.getItem("marco.adminKey") ?? "";
+    } catch {
+      return "";
+    }
+  });
+  useEffect(() => {
+    smsConfig().then(setAuto);
+  }, []);
   const spot = b.spotId ? spotById(b.spotId) : undefined;
   const when = new Date(`${b.date}T${b.time}`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const answer = async (status: "confirmee" | "impossible") => {
+    const text = status === "impossible" && !msg.trim() ? "Complet à cet horaire." : msg;
+    await answerBooking(b.id, status, text);
+    setSms({ status, text: bookingSms(b, status, msg) });
+    setSent("");
+  };
+  const sendAuto = async () => {
+    if (!sms) return;
+    try {
+      localStorage.setItem("marco.adminKey", key);
+    } catch {
+      /* ignore */
+    }
+    setSent("envoi");
+    const r = await sendSms(b.phone, sms.text, key);
+    setSent(r.ok ? "ok" : r.error ?? "Échec");
+    if (r.ok) markSmsSent(b.id);
+  };
   return (
     <div className="admin-row col">
       <div className="row gap-8" style={{ justifyContent: "space-between" }}>
@@ -31,15 +63,30 @@ function BookingRow({ b }: { b: Booking }) {
         <span className={`status status-${b.status}`}>{b.status === "confirmee" ? "Confirmée" : b.status === "impossible" ? "Impossible" : "À traiter"}</span>
       </div>
       <span className="small">{when} à {b.time} · {b.people} pers. · au nom de {b.name} · <a className="link" href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}>{b.phone}</a></span>
-      <span className="small">Code client : <strong className="code-inline">{b.code || "—"}</strong>{b.honored ? " · client venu ✓" : ""}</span>
+      <span className="small">Code client : <strong className="code-inline">{b.code || "—"}</strong>{b.honored ? " · client venu ✓" : ""}{b.smsAt ? " · SMS envoyé ✓" : ""}</span>
       {b.note && <p className="small muted">« {b.note} »</p>}
-      <a className="link small" href={spot ? reserveUrl(spot) : duckyUrl(b.place)} target="_blank" rel="noreferrer">Site du restaurant ›</a>
-      <input className="input" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Message pour l'utilisateur (ex. Table en terrasse, confirmée par SMS)" />
+      <a className="link small" href={spot ? reserveUrl(spot) : duckyUrl(b.place)} target="_blank" rel="noreferrer">Site du lieu ›</a>
+      <input className="input" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Précision pour le client (ex. Table en terrasse)" />
       <div className="row gap-8">
-        <button className="btn-mini primary" onClick={() => answerBooking(b.id, "confirmee", msg)}>Confirmée</button>
-        <button className="btn-mini" onClick={() => answerBooking(b.id, "impossible", msg || "Complet à cet horaire : dis-moi si un autre créneau te va.")}>Impossible</button>
+        <button className="btn-mini primary" onClick={() => answer("confirmee")}>Confirmée</button>
+        <button className="btn-mini" onClick={() => answer("impossible")}>Impossible</button>
         <button className={`btn-mini ${b.honored ? "primary" : ""}`} onClick={() => setHonored(b.id, !b.honored)}>{b.honored ? "Venu ✓" : "Client venu"}</button>
       </div>
+      {sms && (
+        <div className="sms-box">
+          <span className="tiny muted">SMS pour {b.phone} ({sms.text.length} caractères{sms.text.length > 160 ? ", 2 SMS" : ""})</span>
+          <p className="small">{sms.text}</p>
+          {auto ? (
+            <div className="row gap-8">
+              <input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Clé admin" style={{ flex: 1 }} />
+              <button className="btn-mini primary" disabled={!key || sent === "envoi" || sent === "ok"} onClick={sendAuto}>{sent === "ok" ? "Envoyé ✓" : sent === "envoi" ? "Envoi…" : "Envoyer le SMS"}</button>
+            </div>
+          ) : (
+            <a className="btn-mini primary" href={smsLink(b.phone, sms.text)} onClick={() => markSmsSent(b.id)}>Ouvrir le SMS pré-rempli</a>
+          )}
+          {sent && sent !== "ok" && sent !== "envoi" && <span className="tiny error-text">{sent}</span>}
+        </div>
+      )}
     </div>
   );
 }

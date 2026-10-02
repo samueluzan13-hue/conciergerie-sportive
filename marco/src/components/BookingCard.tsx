@@ -159,7 +159,7 @@ export function BookingCard({ draft }: { draft: BookingDraft }) {
           <p className="tiny muted">
             {voice
               ? "L'assistant vocal de Marco appelle le restaurant en se présentant comme tel. Ton nom et ton téléphone ne sont donnés qu'au restaurant, s'il les demande."
-              : "Ton nom et ton téléphone servent uniquement à cette réservation et sont visibles par l'équipe Marco qui la traite."}
+              : "Tu reçois un SMS dès que le lieu a répondu. Ton nom et ton téléphone servent uniquement à cette réservation et ne sont vus que par l'équipe Marco qui la traite."}
           </p>
         </>
       ) : (

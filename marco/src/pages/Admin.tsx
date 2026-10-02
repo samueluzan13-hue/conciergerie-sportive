@@ -6,7 +6,7 @@ import { STREETS, type StreetStory } from "../data/streets";
 import { CITIES, type CityId } from "../data/cities";
 import { answerBooking, markSmsSent, setHonored, deleteSpot, deleteStreet, deleteSuggestion, saveSpot, saveStreet, useCloud, type Booking, type Suggestion } from "../lib/cloud";
 import { duckyUrl, reserveUrl } from "../lib/reservation";
-import { bookingSms, sendSms, smsConfig, smsLink } from "../lib/sms";
+import { bookingSms, sendSms, smsConfig, smsLink, whatsappLink } from "../lib/sms";
 import { ACTION_LABEL, partnerReport, partnerStats } from "../lib/partners";
 
 type Tab = "lieux" | "rues" | "propositions" | "reservations" | "partenaires";
@@ -82,9 +82,25 @@ function BookingRow({ b }: { b: Booking }) {
               <button className="btn-mini primary" disabled={!key || sent === "envoi" || sent === "ok"} onClick={sendAuto}>{sent === "ok" ? "Envoyé ✓" : sent === "envoi" ? "Envoi…" : "Envoyer le SMS"}</button>
             </div>
           ) : (
-            <a className="btn-mini primary" href={smsLink(b.phone, sms.text)} onClick={() => markSmsSent(b.id)}>Ouvrir le SMS pré-rempli</a>
+            <>
+              <div className="place-actions">
+                <a className="btn-mini primary" href={whatsappLink(b.phone, sms.text)} target="_blank" rel="noreferrer" onClick={() => markSmsSent(b.id)}>Envoyer par WhatsApp</a>
+                <button
+                  className="btn-mini"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sms.text).then(() => setSent("copie"), () => setSent("copie-manuelle"));
+                    markSmsSent(b.id);
+                  }}
+                >
+                  {sent === "copie" ? "Message copié ✓" : "Copier le message"}
+                </button>
+                <a className="btn-mini" href={smsLink(b.phone, sms.text)} target="_blank" rel="noreferrer" onClick={() => markSmsSent(b.id)}>SMS (sur téléphone)</a>
+              </div>
+              <span className="tiny muted">Sur ordinateur : WhatsApp, ou copie le message et envoie-le en SMS depuis ton téléphone au {b.phone}.</span>
+              {sent === "copie-manuelle" && <textarea className="input textarea" readOnly rows={4} value={sms.text} onFocus={(e) => e.target.select()} />}
+            </>
           )}
-          {sent && sent !== "ok" && sent !== "envoi" && <span className="tiny error-text">{sent}</span>}
+          {auto && sent && sent !== "ok" && sent !== "envoi" && <span className="tiny error-text">{sent}</span>}
         </div>
       )}
     </div>

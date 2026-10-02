@@ -33,6 +33,9 @@ export function bookingSms(b: Pick<Booking, "place" | "date" | "time" | "people"
   return gsm(text);
 }
 
+/** Lien WhatsApp avec le message prêt (fonctionne sur ordinateur via WhatsApp Web et sur téléphone). */
+export const whatsappLink = (phone: string, body: string) => `https://wa.me/${intlPhone(phone).replace(/^\+/, "")}?text=${encodeURIComponent(body)}`;
+
 /** Lien qui ouvre l'application SMS du téléphone avec le message déjà écrit (fonctionne sur iPhone et Android). */
 export const smsLink = (phone: string, body: string) => `sms:${intlPhone(phone)}?&body=${encodeURIComponent(body)}`;
 

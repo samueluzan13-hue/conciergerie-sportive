@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Mood } from "../data/spots";
+import { cityById, type CityId } from "../data/cities";
 import { saveUserState, startCloud } from "./cloud";
 
 export interface Profile {
@@ -7,6 +8,8 @@ export interface Profile {
   quartier: string;
   moods: Mood[];
   onboarded: boolean;
+  /** ville explorée en ce moment (absent = Paris) */
+  city?: CityId;
 }
 
 export interface SavedPlan {
@@ -29,6 +32,24 @@ export interface MyBooking {
   callId?: string;
 }
 
+/** Vols et hébergements réservés dans Marco. */
+export interface MyTrip {
+  id: string;
+  kind: "vol" | "hotel" | "appartement" | "sejour";
+  title: string;
+  detail: string;
+  /** date de départ ou d'arrivée (AAAA-MM-JJ) */
+  date: string;
+  reference: string;
+  price: number;
+  currency: string;
+  /** réservation d'exemple (mode démonstration) */
+  demo?: boolean;
+  /** séjour sur mesure : le programme écrit par Marco */
+  text?: string;
+  createdAt: number;
+}
+
 interface State {
   profile: Profile;
   saved: string[];
@@ -39,6 +60,7 @@ interface State {
   memory: string[];
   /** réservations confiées à Marco (le suivi détaillé est dans la base) */
   bookings: MyBooking[];
+  trips: MyTrip[];
   waitlist?: string;
   updatedAt?: number;
 }
@@ -52,6 +74,7 @@ const DEFAULT: State = {
   streetsRead: [],
   memory: [],
   bookings: [],
+  trips: [],
 };
 
 function load(): State {
@@ -154,4 +177,17 @@ export function updateBooking(id: string, patch: Partial<MyBooking>) {
   const cur = (state.bookings ?? []).find((b) => b.id === id);
   if (!cur || Object.entries(patch).every(([k, v]) => cur[k as keyof MyBooking] === v)) return;
   setState((s) => ({ ...s, bookings: (s.bookings ?? []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }));
+}
+
+/** Ville en cours d'exploration. */
+export function useCity() {
+  return cityById(useStore((s) => s.profile.city));
+}
+
+export function setCity(city: CityId) {
+  updateProfile({ city });
+}
+
+export function addTrip(t: MyTrip) {
+  setState((s) => ({ ...s, trips: [t, ...(s.trips ?? [])].slice(0, 40) }));
 }

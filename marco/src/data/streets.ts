@@ -1,5 +1,9 @@
+import type { CityId } from "./cities";
+import { WORLD_STREETS } from "./world-streets";
 export interface StreetStory {
   id: string;
+  /** ville (absent = Paris) */
+  city?: CityId;
   name: string;
   aliases: string[];
   arrondissement: string;
@@ -505,15 +509,18 @@ function normalize(s: string) {
     .trim();
 }
 
-export function findStreet(query: string): StreetStory | undefined {
+export function findStreet(query: string, city?: CityId): StreetStory | undefined {
   const q = normalize(query);
   if (!q) return undefined;
+  const STREETS = city ? cityStreets(city) : ALL();
   return (
     STREETS.find((s) => normalize(s.name) === q || s.aliases.some((a) => normalize(a) === q)) ??
     STREETS.find((s) => normalize(s.name).includes(q) || s.aliases.some((a) => normalize(a).includes(q))) ??
     STREETS.find((s) => q.includes(normalize(s.name)) || s.aliases.some((a) => q.includes(normalize(a))))
   );
 }
+
+const ALL = () => STREETS;
 
 export function suggestStreets(query: string, max = 5): StreetStory[] {
   const q = normalize(query);
@@ -522,3 +529,8 @@ export function suggestStreets(query: string, max = 5): StreetStory[] {
     (s) => normalize(s.name).includes(q) || s.aliases.some((a) => normalize(a).startsWith(q)),
   ).slice(0, max);
 }
+
+STREETS.push(...WORLD_STREETS);
+
+export const streetCity = (s: StreetStory): CityId => s.city ?? "paris";
+export const cityStreets = (city: CityId) => STREETS.filter((s) => streetCity(s) === city);

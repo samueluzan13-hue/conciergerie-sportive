@@ -1,5 +1,4 @@
-// Vols et hôtels : liens vers les comparateurs, pré-remplis et triés selon le choix de l'utilisateur.
-// (Les prix en direct demandent un accord avec un fournisseur de vols ; en attendant, Marco pré-remplit les meilleurs comparateurs.)
+// Vols : villes et aéroports, et la forme d'une recherche (la recherche et la réservation se font dans Marco, voir lib/booking.ts).
 
 export type FlightSort = "prix" | "prix-desc" | "rapide" | "meilleur";
 export type Cabin = "economy" | "premium" | "business" | "first";
@@ -36,28 +35,3 @@ export function toIata(text: string): string | null {
 }
 
 export const placeName = (code: string) => AIRPORTS.find(([c]) => c === code)?.[1] ?? code;
-
-/** Kayak : seul comparateur qui accepte le tri dans l'adresse (prix croissant, décroissant, durée, meilleur). */
-export function kayakUrl(s: FlightSearch) {
-  const cabin = s.cabin === "economy" ? "" : `/${s.cabin === "premium" ? "premium" : s.cabin}`;
-  const sort = { prix: "price_a", "prix-desc": "price_b", rapide: "duration_a", meilleur: "bestflight_a" }[s.sort];
-  return `https://www.kayak.fr/flights/${s.from}-${s.to}/${s.depart}${s.back ? `/${s.back}` : ""}${cabin}/${s.adults}adults?sort=${sort}`;
-}
-
-export function skyscannerUrl(s: FlightSearch) {
-  const d = (x: string) => x.slice(2).replace(/-/g, "");
-  const cabin = { economy: "economy", premium: "premiumeconomy", business: "business", first: "first" }[s.cabin];
-  return `https://www.skyscanner.fr/transport/vols/${s.from.toLowerCase()}/${s.to.toLowerCase()}/${d(s.depart)}/${s.back ? `${d(s.back)}/` : ""}?adultsv2=${s.adults}&cabinclass=${cabin}&rtn=${s.back ? 1 : 0}`;
-}
-
-export function googleFlightsUrl(s: FlightSearch) {
-  const cabin = { economy: "", premium: " premium economy", business: " business class", first: " first class" }[s.cabin];
-  const q = `Flights from ${s.from} to ${s.to} on ${s.depart}${s.back ? ` through ${s.back}` : " one way"} ${s.adults} adult${s.adults > 1 ? "s" : ""}${cabin}`;
-  return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&hl=fr&curr=EUR`;
-}
-
-/** Comparer le prix d'un hôtel précis pour des dates (Google Hôtels réunit les sites de réservation et le site officiel). */
-export function hotelCompareUrl(name: string, checkin?: string, checkout?: string, adults = 2) {
-  const dates = checkin && checkout ? ` du ${checkin} au ${checkout}` : "";
-  return `https://www.google.com/travel/hotels?q=${encodeURIComponent(`${name} Paris${dates}`)}&hl=fr&curr=EUR&adults=${adults}`;
-}

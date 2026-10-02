@@ -5,7 +5,7 @@ const MODEL = "claude-opus-5-5";
 
 interface Body {
   messages?: { role: "user" | "assistant"; content: string }[];
-  profile?: { name?: string; quartier?: string; moods?: string[]; memory?: string[] };
+  profile?: { name?: string; quartier?: string; moods?: string[]; memory?: string[]; city?: string };
   hint?: string;
 }
 
@@ -54,7 +54,7 @@ export async function handleMarco(method: string, raw: string): Promise<{ status
     // Recherche web en direct : horaires, ouverture, nouveautés. Le serveur Anthropic exécute les recherches ;
     // si le tour est mis en pause (trop de recherches d'un coup), on le relance tel quel.
     const system: Anthropic.Beta.BetaTextBlockParam[] = [
-      { type: "text", text: `${marcoInstructions()}\n\n${LIVE_NOTE}`, cache_control: { type: "ephemeral" } },
+      { type: "text", text: `${marcoInstructions(body.profile?.city)}\n\n${LIVE_NOTE}`, cache_control: { type: "ephemeral" } },
       { type: "text", text: `${nowNote()} ${profileNote(body.profile)}${typeof body.hint === "string" ? `\n\n${body.hint.slice(0, 300)}` : ""}` },
     ];
     const convo: Anthropic.Beta.BetaMessageParam[] = messages;

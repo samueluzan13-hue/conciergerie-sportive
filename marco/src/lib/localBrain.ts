@@ -1,6 +1,8 @@
 // Le "cerveau local" de Marco : répond sans IA en ligne, à partir de sa base d'adresses et de rues.
-import { SPOTS, QUARTIERS, type Diet, type Spot } from "../data/spots";
-import { arrFromText, DIET_NOTE, DIET_ZONES, NIGHT, NIGHT_NOTE } from "../data/guides";
+import { citySpots, QUARTIERS, type Diet, type Spot } from "../data/spots";
+import { arrFromText as parisArr, DIET_NOTE, DIET_ZONES, NIGHT, NIGHT_NOTE } from "../data/guides";
+import { cityById, type City } from "../data/cities";
+import { WORLD_DIET, WORLD_NIGHTS } from "../data/world-guides";
 import { findStreet, type StreetStory } from "../data/streets";
 import { arrLabel, exactVoie, searchVoies } from "../data/voies";
 import { distanceKm } from "./geo";
@@ -22,9 +24,13 @@ export function streetMarkdown(s: StreetStory) {
     .join("\n\n");
 }
 
+/** Ville de la question en cours (les arrondissements n'existent qu'à Paris). */
+let cur: City = cityById("paris");
+const arrFromText = (t: string) => (cur.id === "paris" ? parisArr(t) : null);
+
 /** Centre approximatif d'un arrondissement (moyenne des lieux connus). */
 function arrCenter(arr: number) {
-  const inArr = SPOTS.filter((s) => s.arrondissement === arr);
+  const inArr = citySpots("paris").filter((s) => s.arrondissement === arr);
   if (!inArr.length) return null;
   return { lat: inArr.reduce((a, s) => a + s.lat, 0) / inArr.length, lng: inArr.reduce((a, s) => a + s.lng, 0) / inArr.length };
 }
@@ -33,11 +39,13 @@ function arrCenter(arr: number) {
 function pick(filter: (s: Spot) => boolean, t: string, n = 3) {
   const { profile } = getState();
   const arr = arrFromText(t);
-  const origin = (arr && arrCenter(arr)) ||
-    QUARTIERS.find((x) => norm(t).includes(norm(x.name).split(" /")[0])) ||
-    QUARTIERS.find((x) => x.name === profile.quartier) || QUARTIERS[0];
+  const origin = cur.id === "paris"
+    ? (arr && arrCenter(arr)) ||
+      QUARTIERS.find((x) => norm(t).includes(norm(x.name).split(" /")[0])) ||
+      QUARTIERS.find((x) => x.name === profile.quartier) || QUARTIERS[0]
+    : cur.districts.find((d) => norm(t).includes(norm(d.name).split(" ·")[0])) || cur.center;
   // les hôtels ne sortent que si on les demande
-  const pool = SPOTS.filter(filter);
+  const pool = citySpots(cur.id).filter(filter);
   const ranked = (pool.every((s) => s.category === "hotel") ? pool : pool.filter((s) => s.category !== "hotel"))
     .map((s) => ({ s, d: distanceKm(origin, s) - s.hidden * 0.4 - (arr && s.arrondissement === arr ? 5 : 0) }))
     .sort((a, b) => a.d - b.d)
@@ -107,12 +115,15 @@ export function localReply(input: string): string {
   strong = true;
   const t = norm(input);
   const { profile } = getState();
+  cur = cityById(profile.city);
+  const paris = cur.id === "paris";
   const name = profile.name ? ` ${profile.name}` : "";
 
   // 1. Histoire de rue
-  const streetQuery = input.match(/\b(rue|avenue|av\.?|boulevard|bd|place|passage|quai)\s+.+/i)?.[0];
-  const street = findStreet(streetQuery ?? input);
+  const streetQuery = input.match(/\b(rue|avenue|av\.?|boulevard|bd|place|passage|quai|street|calle|carrer|rua|via|straat|strasse|straße|road|avenida|plaza|piazza)\s+.+/i)?.[0];
+  const street = findStreet(streetQuery ?? input, cur.id);
   if (street && (streetQuery || input.trim().split(/\s+/).length <= 4)) return streetMarkdown(street);
+  if (!paris && streetQuery) return `Ouvre sa fiche, je te raconte son histoire, un fait historique et une anecdote : [[rue:${streetQuery.trim()}]]`;
   const exact = streetQuery ? undefined : exactVoie(input);
   const voies = exact ? [exact] : streetQuery ? searchVoies(streetQuery, 3) : [];
   if (streetQuery || exact) {
@@ -133,8 +144,9 @@ export function localReply(input: string): string {
       duration: has(t, ["3h", "3 h", "heures", "aprem", "apres-midi"]) ? "3h" : has(t, ["soir", "nuit"]) ? "soiree" : "journee",
       budget: has(t, ["pas cher", "budget", "fauche", "gratuit"]) ? 1 : has(t, ["luxe", "chic", "folie"]) ? 3 : 2,
       envies: [],
-      quartier: profile.quartier,
+      quartier: paris ? profile.quartier : cur.districts[0]?.name ?? "",
       hiddenOnly: has(t, ["touriste", "cache", "secret", "local"]),
+      city: cur.id,
     };
     const plan = generatePlan(inp);
     return `### ${plan.title}\n${plan.intro}\n\n${plan.stops
@@ -143,7 +155,7 @@ export function localReply(input: string): string {
   }
 
   // 3a. Hôtels
-  if (has(t, ["hotel", "dormir", "chambre", "nuit a paris", "hebergement", "auberge", "palace", "loger"])) {
+  if (has(t, ["hotel", "dormir", "chambre", "nuit a paris", "hebergement", "auberge", "palace", "loger", "airbnb", "appartement", "appart"])) {
     strong = false; // l'IA connaît aussi les disponibilités et tous les hôtels ; la sélection sert de secours
     const cheap = has(t, ["pas cher", "budget", "petit prix", "auberge", "economique", "moins cher"]);
     const lux = has(t, ["luxe", "palace", "5 etoiles", "haut de gamme", "plus cher"]);
@@ -151,13 +163,13 @@ export function localReply(input: string): string {
       cheap ? "Pour dormir sans se ruiner :" : lux ? "Pour se faire plaisir :" : "Mes hôtels coups de cœur :",
       (s) => s.category === "hotel" && (!cheap || s.price === 1) && (!lux || s.price === 3),
       t, 4, "comme hôtel",
-    )}\n\nTous les hôtels triés du moins cher au plus cher : [[go:/voyages?tab=hotels|Voir les hôtels]]`;
+    )}\n\nDisponibilités et réservation directement dans Marco : [[go:/voyages?tab=hotels|Voir les hôtels]] [[go:/voyages?tab=appartements|Voir les appartements]]`;
   }
 
   // 3b. Vols
   if (has(t, ["vol ", "vols", "avion", "billet d'avion", "aeroport", "compagnie aerienne", "low cost"])) {
     strong = false;
-    return `Je compare les vols pour toi sur Kayak, Google Vols et Skyscanner, triés du moins cher au plus cher (ou le plus rapide) : [[go:/voyages?tab=vols|Chercher un vol]]\n\nMes réflexes pour payer moins cher : regarde le calendrier des prix sur plusieurs jours, compare Orly, Roissy et Beauvais, et vérifie le prix des bagages en soute avant de choisir un low cost.`;
+    return `Je te montre les vols disponibles directement dans Marco, du moins cher au plus cher (ou le plus rapide), et tu réserves ici : [[go:/voyages?tab=vols|Chercher un vol]]\n\nMes réflexes pour payer moins cher : compare plusieurs jours de départ, regarde tous les aéroports de la ville, et vérifie le prix des bagages en soute avant de choisir un low cost.`;
   }
 
   // 3. Réservation / voyage
@@ -167,11 +179,19 @@ export function localReply(input: string): string {
     if (has(t, ["reserv", "book"]) && !has(t, ["hotel", "vol ", "voyage", "sejour", "vacances"])) {
       return `Dis-moi **le restaurant ou l'activité, le jour, l'heure et combien vous êtes**, et je m'en occupe${name ? "," + name : ""}.\n\nTu peux aussi ouvrir la fiche d'un lieu : le bouton **Réserver** t'emmène directement sur son site officiel.`;
     }
-    return `Bientôt, tu pourras réserver **tout ton voyage** dans Marco : hébergement, activités, restos, le tout dans un seul plan. Inscris-toi sur la page **Voyages** pour être prévenu${name ? "," + name : ""}.\n\nPour une table ou une activité, c'est déjà possible : dis-moi où, quand et combien vous êtes.`;
+    return `Tout ton voyage se prépare ici${name ? "," + name : ""} : vols, hôtels, appartements et un programme jour par jour.\n\n[[go:/voyages?tab=sejour|Construire mon séjour sur mesure]] [[go:/voyages?tab=vols|Chercher un vol]]`;
   }
 
   // 4. Casher / halal
   const diet: Diet | null = has(t, ["casher", "cacher", "kasher", "kosher"]) ? "casher" : has(t, ["halal", "hallal"]) ? "halal" : null;
+  if (diet && !paris) {
+    strong = false;
+    const zones = (WORLD_DIET[cur.id] ?? []).filter((z) => z.diet === diet);
+    const spots = pick((s) => Boolean(s.diet?.includes(diet)), t, 3);
+    return `${zones.length ? `Pour manger ${diet} à ${cur.name}, les quartiers où chercher :\n\n${zones.map((z) => `- **${z.name}** : ${z.streets}. ${z.text}`).join("\n")}` : `Je n'ai pas encore de quartier ${diet} repéré à ${cur.name}.`}${
+      spots.length ? `\n\n**Dans la sélection Marco**\n${list(spots)}` : ""
+    }\n\n_${DIET_NOTE}_`;
+  }
   if (diet) {
     // la base ne connaît que des quartiers : on laisse l'IA nommer de vrais restaurants quand elle est disponible
     strong = false;
@@ -190,6 +210,13 @@ export function localReply(input: string): string {
   }
 
   // 5. Soirées
+  if (!paris && has(t, ["soiree", "sortir", "ce soir", "club", "boite", "danser", "fete", "nuit", "concert", "cabaret", "teuf"]) && !has(t, ["jazz"])) {
+    const guides = WORLD_NIGHTS[cur.id] ?? [];
+    const g = guides.filter((n) => norm(t).includes(norm(n.district).split(" ·")[0]));
+    const show = (g.length ? g : guides.slice(0, 3));
+    if (!show.length) strong = false;
+    return `${show.map((n) => `### ${n.district} la nuit\n${n.vibe}\n\n${n.venues.map((v) => `- **${v.name}** (${v.kind}) — ${v.address}. ${v.tip}`).join("\n")}`).join("\n\n")}\n\n_${NIGHT_NOTE}_\n\n[[go:/soirees|Voir tous les quartiers]]`;
+  }
   if (has(t, ["soiree", "sortir", "ce soir", "club", "boite", "danser", "fete", "nuit", "concert", "cabaret", "teuf", "guinguette"]) && !has(t, ["jazz"])) {
     const arr = arrFromText(t);
     const guides = arr ? NIGHT.filter((n) => n.arr === arr) : [11, 18, 10].map((a) => NIGHT.find((n) => n.arr === a)!);

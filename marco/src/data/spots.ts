@@ -2,6 +2,8 @@ import { EXTRA_SPOTS } from "./spots-extra";
 import { RESTO_SPOTS } from "./spots-restos";
 import { ACTIVITY_SPOTS } from "./spots-activites";
 import { HOTEL_SPOTS } from "./spots-hotels";
+import type { CityId } from "./cities";
+import { WORLD_SPOTS } from "./world";
 import { WEBSITES } from "./websites";
 export type Category = "resto" | "bar" | "cafe" | "culture" | "nature" | "insolite" | "activite" | "hotel";
 
@@ -11,6 +13,8 @@ export type Mood = "tendance" | "insolite" | "bobo" | "jazz" | "cache" | "romant
 
 export interface Spot {
   id: string;
+  /** ville (absent = Paris) */
+  city?: CityId;
   name: string;
   category: Category;
   quartier: string;
@@ -19,6 +23,7 @@ export interface Spot {
   lat: number;
   lng: number;
   price: 1 | 2 | 3;
+  /** arrondissement à Paris ; 0 dans les autres villes (on utilise le quartier) */
   /** 1 = connu, 3 = vraie pépite cachée */
   hidden: 1 | 2 | 3;
   moods: Mood[];
@@ -519,7 +524,13 @@ const BASE_SPOTS: Spot[] = [
   },
 ];
 
-export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS, ...HOTEL_SPOTS];
+export const SPOTS: Spot[] = [...BASE_SPOTS, ...EXTRA_SPOTS, ...RESTO_SPOTS, ...ACTIVITY_SPOTS, ...HOTEL_SPOTS, ...WORLD_SPOTS];
+
+export const spotCity = (s: Spot): CityId => s.city ?? "paris";
+/** Les lieux d'une ville (lu à chaque appel : la base peut remplacer la liste). */
+export const citySpots = (city: CityId) => SPOTS.filter((s) => spotCity(s) === city);
+/** Lieu dans une ville autre que Paris : on affiche le quartier plutôt que l'arrondissement. */
+export const placeLabel = (s: Spot) => (spotCity(s) === "paris" && s.arrondissement ? `${s.quartier}, ${s.arrondissement === 1 ? "1er" : `${s.arrondissement}e`}` : s.quartier);
 for (const s of SPOTS) s.website ??= WEBSITES[s.id];
 
 /** Type de réservation proposé : tous les restos se réservent (table), toutes les activités aussi. */

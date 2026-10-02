@@ -7,7 +7,6 @@ import { Icon } from "./Icon";
 import { reserveUrl, siteLabel } from "../lib/reservation";
 import { SpotPhoto } from "./SpotPhoto";
 import { HOTEL_PRICE_LABEL } from "../data/spots-hotels";
-import { hotelCompareUrl } from "../lib/travel";
 import { getAssets, setSpotPhoto } from "../lib/cloud";
 import { HiddenBadge, Price, SaveButton } from "./SpotCard";
 
@@ -124,7 +123,7 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               {book ? (
                 <a className="btn btn-primary" href={bookingUrl(spot)} target="_blank" rel="noreferrer">
                   <Icon name="calendar" size={18} />
-                  {book === "table" ? "Réserver au restaurant" : book === "hotel" ? "Réserver à l'hôtel" : "Réserver sur le site officiel"}
+                  {book === "table" ? "Réserver au restaurant" : book === "hotel" ? "Site de l'hôtel" : "Réserver sur le site officiel"}
                 </a>
               ) : null}
               <a className={`btn ${book ? "btn-ghost" : "btn-primary"}`} href={directionsUrl(spot)} target="_blank" rel="noreferrer">
@@ -132,9 +131,15 @@ export function SpotSheetProvider({ children }: { children: ReactNode }) {
               </a>
             </div>
             {spot.category === "hotel" && (
-              <a className="btn btn-ghost btn-block ask-marco" href={hotelCompareUrl(spot.name)} target="_blank" rel="noreferrer">
-                <Icon name="search" size={18} /> Comparer les prix pour mes dates
-              </a>
+              <button
+                className="btn btn-primary btn-block ask-marco"
+                onClick={() => {
+                  setId(null);
+                  navigate(`/voyages?tab=hotels&city=${spot.city ?? "paris"}&hotel=${spot.id}`);
+                }}
+              >
+                <Icon name="bed" size={18} /> Voir les chambres et réserver dans Marco
+              </button>
             )}
             <button
               className="btn btn-soft btn-block ask-marco"

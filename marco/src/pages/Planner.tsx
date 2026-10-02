@@ -6,7 +6,7 @@ import { SpotPhoto } from "../components/SpotPhoto";
 import { bookingUrl, useSpotSheet } from "../components/SpotSheet";
 import { bookingKind, CATEGORY_LABEL, QUARTIERS } from "../data/spots";
 import { generatePlan, type Budget, type Duration, type Envie, type Plan, type PlanInput, type Who } from "../lib/planner";
-import { savePlan, useStore } from "../lib/store";
+import { savePlan, useCity, useStore } from "../lib/store";
 
 const WHO: { v: Who; label: string; sub: string }[] = [
   { v: "solo", label: "Solo", sub: "Moi, moi et moi" },
@@ -33,6 +33,8 @@ const STEPS = ["Qui ?", "Combien de temps ?", "Tes envies", "Ton budget", "On pa
 
 export function Planner() {
   const profile = useStore((s) => s.profile);
+  const city = useCity();
+  const starts = city.id === "paris" ? QUARTIERS.map((q) => q.name) : city.districts.map((d) => d.name);
   const navigate = useNavigate();
   const openSpot = useSpotSheet();
   const [step, setStep] = useState(0);
@@ -41,8 +43,9 @@ export function Planner() {
     duration: "3h",
     budget: 2,
     envies: [],
-    quartier: profile.quartier,
+    quartier: city.id === "paris" ? profile.quartier : city.districts[0]?.name ?? "",
     hiddenOnly: true,
+    city: city.id,
   });
   const [plan, setPlan] = useState<Plan | null>(null);
   const [saved, setSaved] = useState(false);
@@ -211,8 +214,8 @@ export function Planner() {
       )}
       {step === 4 && (
         <div className="chip-grid">
-          {QUARTIERS.map((q) => (
-            <button key={q.name} className={`chip ${input.quartier === q.name ? "on" : ""}`} onClick={() => set("quartier", q.name)}>{q.name}</button>
+          {starts.map((name) => (
+            <button key={name} className={`chip ${input.quartier === name ? "on" : ""}`} onClick={() => set("quartier", name)}>{name}</button>
           ))}
         </div>
       )}

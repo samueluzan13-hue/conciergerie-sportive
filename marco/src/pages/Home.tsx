@@ -4,11 +4,12 @@ import { Link } from "../components/Nav";
 import { Icon } from "../components/Icon";
 import { MarcoLogo } from "../components/MarcoLogo";
 import { SpotCard, SpotRow } from "../components/SpotCard";
-import { QUARTIERS, SPOTS, type Mood } from "../data/spots";
-import { STREETS } from "../data/streets";
+import { CityPicker } from "../components/CityPicker";
+import { citySpots, QUARTIERS, type Mood } from "../data/spots";
+import { cityStreets } from "../data/streets";
 import { useCloud } from "../lib/cloud";
 import { distanceKm } from "../lib/geo";
-import { useStore } from "../lib/store";
+import { useCity, useStore } from "../lib/store";
 
 const STORIES: { mood: Mood; label: string; letter: string }[] = [
   { mood: "cache", label: "Caché", letter: "C" },
@@ -21,13 +22,13 @@ const STORIES: { mood: Mood; label: string; letter: string }[] = [
   { mood: "famille", label: "Famille", letter: "F" },
 ];
 
-const ACTIONS = [
+const actions = (city: string, paris: boolean) => [
   { to: "/planner", icon: "calendar", title: "Planifier", sub: "Ma journée sur-mesure" },
   { to: "/rues", icon: "book", title: "Une rue", sub: "Son histoire, ses potins" },
-  { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: "La nuit, arrondissement par arrondissement" },
-  { to: "/explorer?cat=resto", icon: "heart", title: "Où manger", sub: "Des restos dans tout Paris" },
+  { to: "/soirees", icon: "star", title: "Sortir ce soir", sub: paris ? "La nuit, arrondissement par arrondissement" : "La nuit, quartier par quartier" },
+  { to: "/explorer?cat=resto", icon: "heart", title: "Où manger", sub: `Des restos dans tout ${city}` },
   { to: "/explorer?cat=activite", icon: "sparkles", title: "Activités", sub: "Ateliers, bateau, sport, insolite" },
-  { to: "/carte", icon: "pin", title: "Autour de moi", sub: "Les pépites du quartier" },
+  { to: "/voyages", icon: "bed", title: "Dormir", sub: "Hôtels et appartements" },
 ];
 
 function greeting() {
@@ -43,23 +44,27 @@ export function Home() {
   const cloud = useCloud();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const city = useCity();
+  const paris = city.id === "paris";
+  const spots = useMemo(() => citySpots(city.id), [city.id, cloud.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const home = QUARTIERS.find((x) => x.name === profile.quartier) ?? QUARTIERS[0];
+  const home = paris ? QUARTIERS.find((x) => x.name === profile.quartier) ?? QUARTIERS[0] : city.center;
   const nearby = useMemo(
     () =>
-      SPOTS.filter((s) => s.hidden >= 2 && s.category !== "hotel")
+      spots.filter((s) => s.hidden >= 2 && s.category !== "hotel")
         .map((s) => ({ s, d: distanceKm(home, s) }))
         .sort((a, b) => a.d - b.d)
         .slice(0, 6),
-    [home, cloud.version],
+    [home, spots],
   );
   const forYou = useMemo(() => {
     const m = profile.moods;
-    const list = SPOTS.filter((s) => s.category !== "hotel" && (!m.length || s.moods.some((x) => m.includes(x))));
-    return (list.length ? list : SPOTS).slice(0, 8);
-  }, [profile.moods, cloud.version]);
-  const streetOfDay = STREETS.length ? STREETS[new Date().getDate() % STREETS.length] : null;
-  const favorites = useMemo(() => SPOTS.filter((s) => s.category !== "hotel").sort((a, b) => b.hidden - a.hidden || a.name.localeCompare(b.name)).slice(0, 4), [cloud.version]);
+    const list = spots.filter((s) => s.category !== "hotel" && (!m.length || s.moods.some((x) => m.includes(x))));
+    return (list.length ? list : spots.filter((s) => s.category !== "hotel")).slice(0, 8);
+  }, [profile.moods, spots]);
+  const streets = cityStreets(city.id);
+  const streetOfDay = streets.length ? streets[new Date().getDate() % streets.length] : null;
+  const favorites = useMemo(() => spots.filter((s) => s.category !== "hotel").sort((a, b) => b.hidden - a.hidden || a.name.localeCompare(b.name)).slice(0, 4), [spots]);
 
   return (
     <div className="page home">
@@ -67,6 +72,7 @@ export function Home() {
         <div className="grow">
           <p className="eyebrow">{greeting()}</p>
           <h1 className="serif hello">{profile.name || "toi"} <span className="wave">👋</span></h1>
+          <CityPicker />
         </div>
         <Link to="/profil" className="avatar-sm serif" aria-label="Mon profil">{(profile.name || "M").charAt(0).toUpperCase()}</Link>
       </header>
@@ -86,13 +92,13 @@ export function Home() {
       <section className="marco-card" onClick={() => navigate("/marco")}>
         <MarcoLogo size={58} />
         <div className="speech">
-          <p className="serif">Tu veux visiter Paris sans finir dans un attrape-touristes ?</p>
+          <p className="serif">Tu veux visiter {city.name} sans finir dans un attrape-touristes ?</p>
           <span className="small">Dis-moi ce que tu veux faire, je construis le plan.</span>
         </div>
       </section>
 
       <nav className="actions" aria-label="Raccourcis">
-        {ACTIONS.map((a) => (
+        {actions(city.name, paris).map((a) => (
           <Link key={a.to} to={a.to} className="action">
             <span className="action-ico"><Icon name={a.icon} size={20} /></span>
             <strong>{a.title}</strong>
@@ -112,10 +118,10 @@ export function Home() {
 
       <section>
         <div className="section-head">
-          <h2 className="serif">Pépites près de chez toi</h2>
+          <h2 className="serif">{paris ? "Pépites près de chez toi" : `Les pépites de ${city.name}`}</h2>
           <Link to="/carte" className="link small">Carte</Link>
         </div>
-        <p className="muted small section-sub">Autour de {profile.quartier}</p>
+        <p className="muted small section-sub">{paris ? `Autour de ${profile.quartier}` : `Autour du centre de ${city.name}`}</p>
         <div className="h-scroll">
           {nearby.map(({ s, d }) => (
             <div key={s.id} className="h-item"><SpotCard spot={s} distance={d} /></div>
@@ -166,8 +172,8 @@ export function Home() {
 
       <Link to="/voyages" className="soon-card">
         <div className="grow">
-          <span className="eyebrow">Bientôt sur Marco</span>
-          <h2 className="serif">Réserve tout ton voyage, au même endroit.</h2>
+          <span className="eyebrow">Marco Voyages</span>
+          <h2 className="serif">Vols, hôtels, appartements et séjour sur mesure.</h2>
         </div>
         <Icon name="arrowRight" size={22} />
       </Link>

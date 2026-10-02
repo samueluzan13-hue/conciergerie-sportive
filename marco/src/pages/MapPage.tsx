@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ParisMap } from "../components/ParisMap";
+import { CityMap } from "../components/ParisMap";
+import { CityPicker } from "../components/CityPicker";
 import { SpotRow } from "../components/SpotCard";
-import { CATEGORY_LABEL, QUARTIERS, SPOTS, type Category } from "../data/spots";
-import { STREETS } from "../data/streets";
+import { CATEGORY_LABEL, citySpots, placeLabel, QUARTIERS, type Category } from "../data/spots";
+import { cityStreets } from "../data/streets";
 import { distanceKm } from "../lib/geo";
-import { useStore } from "../lib/store";
+import { useCity, useStore } from "../lib/store";
+import { useCloud } from "../lib/cloud";
 
 export function MapPage() {
   const saved = useStore((s) => s.saved);
@@ -14,28 +16,33 @@ export function MapPage() {
   const [mode, setMode] = useState<"reve" | "aime">("reve");
   const [cat, setCat] = useState<Category | "all" | "rues">("all");
   const [selected, setSelected] = useState<string | null>(null);
-  const home = QUARTIERS.find((q) => q.name === quartier) ?? null;
+  const city = useCity();
+  const { version } = useCloud();
+  const home = city.id === "paris" ? QUARTIERS.find((q) => q.name === quartier) ?? null : city.center;
 
   const spots = useMemo(
     () =>
-      SPOTS.filter((s) => (mode === "aime" ? saved.includes(s.id) : true) && (cat === "all" || s.category === cat))
+      citySpots(city.id).filter((s) => (mode === "aime" ? saved.includes(s.id) : true) && (cat === "all" || s.category === cat))
         .sort((a, b) => (home ? distanceKm(home, a) - distanceKm(home, b) : 0)),
-    [mode, cat, saved, home],
+    [mode, cat, saved, home, city.id, version], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const showStreets = cat === "rues";
   const sel = spots.find((s) => s.id === selected);
 
   return (
     <div className="map-page">
-      <ParisMap
+      <CityMap
+        key={city.id}
+        city={city.id}
         spots={showStreets ? [] : spots}
-        streets={showStreets ? STREETS : undefined}
+        streets={showStreets ? cityStreets(city.id) : undefined}
         selected={selected}
         home={home}
         onSpot={setSelected}
         onStreet={(s) => navigate(`/rues?q=${encodeURIComponent(s.name)}`)}
       />
 
+      <div className="map-city"><CityPicker /></div>
       <div className="map-panel">
         <div className="segmented">
           <button className={mode === "aime" ? "on" : ""} onClick={() => setMode("aime")}>Ce que j'aime ({saved.length})</button>
@@ -56,7 +63,7 @@ export function MapPage() {
             {sel && <SpotRow spot={sel} meta={`Sélection · ${sel.quartier}`} />}
             {spots.length ? (
               spots.filter((s) => s.id !== selected).slice(0, 15).map((s) => (
-                <SpotRow key={s.id} spot={s} meta={home ? `${s.quartier} · ${distanceKm(home, s).toFixed(1).replace(".", ",")} km de chez toi` : undefined} />
+                <SpotRow key={s.id} spot={s} meta={home ? `${placeLabel(s)} · ${distanceKm(home, s).toFixed(1).replace(".", ",")} km ${city.id === "paris" ? "de chez toi" : "du centre"}` : undefined} />
               ))
             ) : (
               <p className="muted small center">Aucun lieu enregistré pour l'instant. Touche le cœur d'une adresse pour la retrouver ici.</p>

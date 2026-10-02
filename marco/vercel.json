@@ -11,6 +11,9 @@
     },
     "api/appel.ts": {
       "maxDuration": 30
+    },
+    "api/voyage.ts": {
+      "maxDuration": 60
     }
   }
 }

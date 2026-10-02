@@ -4,7 +4,9 @@ import { Icon } from "../components/Icon";
 import { SpotCard } from "../components/SpotCard";
 import { Link } from "../components/Nav";
 import { useCloud } from "../lib/cloud";
-import { CATEGORY_LABEL, MOOD_LABEL, SPOTS, type Category, type Mood } from "../data/spots";
+import { CityPicker } from "../components/CityPicker";
+import { CATEGORY_LABEL, citySpots, MOOD_LABEL, type Category, type Mood } from "../data/spots";
+import { useCity } from "../lib/store";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -19,23 +21,30 @@ export function Explorer() {
   const [hiddenOnly, setHiddenOnly] = useState(false);
   const mood = params.get("mood") as Mood | null;
   const [arr, setArr] = useState(0);
+  const [district, setDistrict] = useState("");
   const cloud = useCloud();
+  const city = useCity();
+  const paris = city.id === "paris";
 
   const results = useMemo(() => {
     const q = norm(query);
-    return SPOTS.filter(
+    return citySpots(city.id).filter(
       (s) =>
         (cat === "all" || s.category === cat) &&
         (!mood || s.moods.includes(mood)) &&
         (!hiddenOnly || s.hidden === 3) &&
-        (!arr || s.arrondissement === arr) &&
+        (paris ? !arr || s.arrondissement === arr : !district || s.quartier === district) &&
         (!q || norm(`${s.name} ${s.quartier} ${s.pitch} ${s.address}`).includes(q)),
     );
-  }, [query, cat, mood, hiddenOnly, arr]);
+  }, [query, cat, mood, hiddenOnly, arr, district, city.id, cloud.version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const districts = useMemo(() => [...new Set(citySpots(city.id).map((s) => s.quartier))].sort((a, b) => a.localeCompare(b, "fr")), [city.id, cloud.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="page">
-      <h1 className="serif page-title">Marco Direct</h1>
+      <div className="row-between title-row">
+        <h1 className="serif page-title">Marco Direct</h1>
+        <CityPicker />
+      </div>
       <form
         className="search"
         onSubmit={(e) => {
@@ -58,10 +67,17 @@ export function Explorer() {
       </div>
 
       <div className="chips-scroll">
-        <select id="explorer-arr" className="chip chip-select" value={arr} onChange={(e) => setArr(Number(e.target.value))} aria-label="Arrondissement">
-          <option value={0}>Tous les arrondissements</option>
-          {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n === 1 ? "1er" : `${n}e`} arrondissement</option>)}
-        </select>
+        {paris ? (
+          <select id="explorer-arr" className="chip chip-select" value={arr} onChange={(e) => setArr(Number(e.target.value))} aria-label="Arrondissement">
+            <option value={0}>Tous les arrondissements</option>
+            {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n === 1 ? "1er" : `${n}e`} arrondissement</option>)}
+          </select>
+        ) : (
+          <select id="explorer-arr" className="chip chip-select" value={district} onChange={(e) => setDistrict(e.target.value)} aria-label="Quartier">
+            <option value="">Tous les quartiers</option>
+            {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        )}
       </div>
 
       <div className="row-between filters">

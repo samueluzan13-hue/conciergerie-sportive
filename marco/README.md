@@ -33,6 +33,18 @@ Données : `src/data/spots.ts` + `src/data/spots-extra.ts` + `spots-restos.ts` +
 1. `scripts/voies-initiales.txt` : première liste saisie à la main (≈1 300 voies) ;
 2. `scripts/voies-officielles.json` (optionnel) : l'export JSON du jeu de données officiel **« Dénominations des emprises des voies actuelles »** d'opendata.paris.fr, qui apporte **toutes** les voies avec l'origine du nom et l'historique. Déposer le fichier puis relancer le script.
 
+## 9 villes
+
+Paris, Madrid, Barcelone, Londres, Lisbonne, Rome, Amsterdam, New York et Berlin. Le choix de la ville (en haut de l'accueil, d'Explorer, de la carte…) change toute l'app : lieux, carte dessinée, soirées par quartier, rues racontées, casher / halal et l'IA. Les données des autres villes sont dans `src/data/world/<ville>.ts`, la ville elle-même (quartiers, plan, aéroport) dans `src/data/cities.ts`.
+
+## Vols, hôtels et appartements réservables dans Marco
+
+Onglet **Voyages** : vols (tri moins cher, plus cher, plus rapide, meilleur compromis, direct uniquement), hôtels et appartements de chaque ville avec chambres et tarifs, puis réservation sans quitter l'app. Côté serveur, `server/travel.ts` (route `/api/voyage`) utilise [Duffel](https://duffel.com) : compagnies aériennes en direct et hébergements (Duffel Stays). Variables : `DUFFEL_ACCESS_TOKEN`, `DUFFEL_STAYS=1`, `MARCO_BOOKING=1` (voir `.env.example`). Sans serveur (aperçu claude.ai), un **mode démonstration** clairement signalé permet de tester le parcours sans rien réserver.
+
+Avant d'ouvrir la réservation au public : encaisser le client (Stripe ou Duffel Payments) avant de créer la commande, car Duffel prélève le solde de l'entreprise. Airbnb n'ouvre ses logements à aucune application tierce : l'onglet Apparts propose les appartements et résidences des partenaires de réservation.
+
+**Séjour sur mesure** : ville, dates, voyageurs, budget, rythme et envies → programme jour par jour construit avec les adresses Marco, budget estimé, puis Marco (IA) écrit le séjour complet ; vol et hébergement se réservent ensuite en deux gestes, et le séjour s'enregistre dans le profil.
+
 ## Réservation par Marco (agent vocal)
 
 Quand l'utilisateur demande à réserver, l'IA prépare une **carte de réservation** dans le chat (lieu, jour, heure, personnes). L'utilisateur ajoute son nom et son téléphone, confirme, et :

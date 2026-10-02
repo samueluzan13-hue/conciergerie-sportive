@@ -5,6 +5,8 @@ import { SpotCard, SpotRow } from "../components/SpotCard";
 import { MOOD_LABEL, QUARTIERS, spotById, type Mood } from "../data/spots";
 import { STREETS } from "../data/streets";
 import { useCloud, watchBooking } from "../lib/cloud";
+import { fmtPrice } from "../lib/booking";
+import { Markdown } from "../components/Markdown";
 import { applyCall, getCall } from "../lib/voice";
 import { forget, setState, updateBooking, updateProfile, useStore } from "../lib/store";
 
@@ -13,6 +15,8 @@ export function Profile() {
   const cloud = useCloud();
   const memory = useStore((s) => s.memory ?? []);
   const bookings = useStore((s) => s.bookings ?? []);
+  const trips = useStore((s) => s.trips ?? []);
+  const [openTrip, setOpenTrip] = useState<string | null>(null);
   const bookingIds = bookings.map((b) => b.id + b.status).join(",");
   // suivi en direct : l'équipe Marco confirme (ou non) dans la base
   useEffect(() => {
@@ -82,6 +86,28 @@ export function Profile() {
           </select>
         </label>
       </section>
+
+      {trips.length > 0 && (
+        <section>
+          <h2 className="serif section-title"><Icon name="plane" size={16} /> Mes voyages</h2>
+          <ul className="booking-list">
+            {trips.map((t) => (
+              <li key={t.id} className="trip-item" onClick={() => t.text && setOpenTrip(openTrip === t.id ? null : t.id)}>
+                <div className="grow">
+                  <strong className="small">{t.title}</strong>
+                  <p className="tiny muted">{t.detail}</p>
+                  {t.reference && <p className="tiny">Référence {t.reference}{t.price ? ` · ${fmtPrice(t.price, t.currency)}` : ""}</p>}
+                  {t.kind === "sejour" && <p className="tiny">Budget estimé sur place : {fmtPrice(t.price, t.currency)} · {openTrip === t.id ? "masquer" : "voir le programme"}</p>}
+                  {openTrip === t.id && t.text && <div className="trip-text"><Markdown text={t.text} /></div>}
+                </div>
+                <span className={`status ${t.demo ? "" : "status-confirmee"}`}>
+                  {t.kind === "sejour" ? "Programme" : t.demo ? "Exemple" : "Réservé"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {bookings.length > 0 && (
         <section>
@@ -194,7 +220,7 @@ export function Profile() {
             <button
               className="btn btn-danger grow"
               onClick={() => {
-                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [], memory: [], bookings: [] }));
+                setState(() => ({ profile: { name: "", quartier: QUARTIERS[0].name, moods: [], onboarded: false }, saved: [], history: [], plans: [], streetsRead: [], memory: [], bookings: [], trips: [] }));
                 setConfirmReset(false);
               }}
             >

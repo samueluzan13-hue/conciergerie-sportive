@@ -6,6 +6,7 @@ import { SPOTS, type Category, type Mood, type Spot } from "../data/spots";
 import { STREETS, type StreetStory } from "../data/streets";
 import { WEBSITES } from "../data/websites";
 import { log, setDiagSink } from "./diag";
+import { isCityId } from "../data/cities";
 
 /* ---------- Types minimaux des capacités (voir la doc du runtime) ---------- */
 interface DocSnap { id: string; exists: boolean; data(): Record<string, unknown> | undefined }
@@ -111,9 +112,10 @@ export function toSpot(id: string, d: Record<string, unknown>): Spot | null {
   return {
     id,
     name,
+    ...(isCityId(d.city) && d.city !== "paris" ? { city: d.city } : {}),
     category,
     quartier: str(d.quartier, 80),
-    arrondissement: clamp(num(d.arrondissement, 1), 1, 20),
+    arrondissement: isCityId(d.city) && d.city !== "paris" ? 0 : clamp(num(d.arrondissement, 1), 1, 20),
     address: str(d.address, 200),
     lat, lng,
     price: clamp(num(d.price, 2), 1, 3) as Spot["price"],
@@ -136,6 +138,7 @@ export function toStreet(id: string, d: Record<string, unknown>): StreetStory | 
   const fait = (d.fait ?? {}) as Record<string, unknown>;
   if (!name || !str(d.histoire)) return null;
   return {
+    ...(isCityId(d.city) && d.city !== "paris" ? { city: d.city } : {}),
     id,
     name,
     aliases: Array.isArray(d.aliases) ? d.aliases.filter((a) => typeof a === "string").slice(0, 10) : [],

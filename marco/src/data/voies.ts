@@ -1,5 +1,6 @@
+import type { CityId } from "./cities";
 import raw from "./voies.json";
-import { findStreet, STREETS, type StreetStory } from "./streets";
+import { cityStreets, findStreet, type StreetStory } from "./streets";
 
 /** Une voie de Paris (rue, avenue, boulevard, place, quai, passage…). */
 export interface Voie {
@@ -56,10 +57,10 @@ export function findVoie(query: string): Voie | undefined {
 }
 
 /** Récit complet écrit par Marco pour cette voie, s'il existe. */
-export function storyFor(v: Voie | string): StreetStory | undefined {
+export function storyFor(v: Voie | string, city: CityId = "paris"): StreetStory | undefined {
   const name = typeof v === "string" ? v : v.n;
-  const exact = STREETS.find((s) => norm(s.name) === norm(name));
-  return exact ?? (typeof v === "string" ? findStreet(v) : undefined);
+  const exact = cityStreets(city).find((s) => norm(s.name) === norm(name));
+  return exact ?? (typeof v === "string" ? findStreet(v, city) : undefined);
 }
 
 export function voiesByArr(arr: number) {

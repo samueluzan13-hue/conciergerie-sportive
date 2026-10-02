@@ -1,4 +1,5 @@
-import { SPOTS, QUARTIERS, type Category, type Spot } from "../data/spots";
+import { citySpots, QUARTIERS, type Category, type Spot } from "../data/spots";
+import { cityById, type CityId } from "../data/cities";
 import { distanceKm, formatTime, travel } from "./geo";
 
 export type Who = "solo" | "date" | "amis" | "famille";
@@ -13,6 +14,10 @@ export interface PlanInput {
   envies: Envie[];
   quartier: string;
   hiddenOnly: boolean;
+  /** ville (absent = Paris) */
+  city?: CityId;
+  /** lieux déjà utilisés (plans sur plusieurs jours) */
+  exclude?: Set<string>;
 }
 
 export interface PlanStop {
@@ -99,15 +104,19 @@ const TITLES: Record<Duration, Record<Who, string>> = {
 };
 
 export function generatePlan(input: PlanInput): Plan {
-  const q = QUARTIERS.find((x) => x.name === input.quartier) ?? QUARTIERS[0];
+  const city = cityById(input.city);
+  const q = city.id === "paris"
+    ? QUARTIERS.find((x) => x.name === input.quartier) ?? QUARTIERS[0]
+    : city.districts.find((d) => d.name === input.quartier) ?? city.center;
   let pos = { lat: q.lat, lng: q.lng };
-  const used = new Set<string>();
+  const used = input.exclude ?? new Set<string>();
+  const pool = citySpots(city.id);
   const slots = skeleton(input);
   let clock = slots[0]?.startMin ?? 14 * 60;
   const stops: PlanStop[] = [];
 
   for (const slot of slots) {
-    const candidates = SPOTS.filter((s) => slot.cats.includes(s.category) && !used.has(s.id));
+    const candidates = pool.filter((s) => slot.cats.includes(s.category) && !used.has(s.id));
     if (!candidates.length) continue;
     const best = candidates.map((s) => ({ s, sc: score(s, input, pos) })).sort((a, b) => b.sc - a.sc)[0].s;
     const t = stops.length ? travel(pos, best) : undefined;
@@ -131,7 +140,7 @@ export function generatePlan(input: PlanInput): Plan {
     title: TITLES[input.duration][input.who],
     intro:
       input.hiddenOnly
-        ? "Zéro attrape-touristes : que des adresses que les Parisiens gardent pour eux."
+        ? `Zéro attrape-touristes : que des adresses que les gens de ${city.name} gardent pour eux.`
         : "Google t'aurait donné 400 options. Marco t'en donne quelques-unes, mais des bonnes.",
     stops,
     totalMinutes: total,

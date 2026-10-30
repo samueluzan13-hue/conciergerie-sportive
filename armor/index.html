@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L'Armor — Crêperie à Mantes-la-Jolie</title>
+  <meta name="description" content="L'Armor, crêperie bretonne au cœur de Mantes-la-Jolie : galettes de sarrasin, crêpes sucrées, cidres et cocktails. Terrasse. Réservation au 01 30 92 20 39.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": "L'Armor",
+    "servesCuisine": ["Crêperie", "Bretonne"],
+    "telephone": "+33130922039",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "29 Rue Porte aux Saints",
+      "postalCode": "78200",
+      "addressLocality": "Mantes-la-Jolie",
+      "addressCountry": "FR"
+    },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.6", "reviewCount": "699" }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ===== En-tête ===== -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="#top" class="logo" aria-label="L'Armor, retour en haut">
+        <svg class="logo__mark" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 9c-1.5 3-4 4.5-4 8a4 4 0 0 0 8 0c0-3.5-2.5-5-4-8Zm-1 15h2l1.5 7h-5Z" fill="currentColor"/>
+        </svg>
+        <span>L'Armor</span>
+      </a>
+
+      <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav" id="nav">
+        <a href="#apropos">La maison</a>
+        <a href="#carte">La carte</a>
+        <a href="#avis">Avis</a>
+        <a href="#infos">Infos pratiques</a>
+        <a href="tel:+33130922039" class="btn btn--small">Réserver</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== Héros ===== -->
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="container hero__content">
+        <p class="hero__kicker">Crêperie bretonne · Mantes-la-Jolie</p>
+        <h1>L'Armor</h1>
+        <p class="hero__lead">Galettes de sarrasin, crêpes de froment et cidres de Bretagne, servis avec le sourire au pied de la collégiale.</p>
+        <div class="hero__actions">
+          <a href="tel:+33130922039" class="btn">Réserver : 01 30 92 20 39</a>
+          <a href="#carte" class="btn btn--ghost">Voir la carte</a>
+        </div>
+        <div class="hero__badges">
+          <span class="badge"><span class="stars" aria-hidden="true">★★★★★</span> 4,6 / 5 · 699 avis</span>
+          <span class="badge" id="status-badge">Ouvert le soir dès 19h</span>
+        </div>
+      </div>
+      <div class="hero__wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none"><path d="M0 40c240 40 480 40 720 0s480-40 720 0v40H0Z" fill="currentColor"/></svg>
+      </div>
+    </section>
+
+    <!-- ===== À propos ===== -->
+    <section class="section" id="apropos">
+      <div class="container about">
+        <div class="about__text reveal">
+          <p class="eyebrow">La maison</p>
+          <h2>Un petit coin de Bretagne en Yvelines</h2>
+          <p>À L'Armor, on prend le temps. La pâte est préparée chaque jour, les galettes sont saisies sur le billig sous vos yeux et garnies de produits choisis avec soin : beurre demi-sel, andouille de Guémené, fromages affinés, caramel au beurre salé maison.</p>
+          <p>Que ce soit pour un dîner en amoureux, un repas en famille ou un verre entre amis en terrasse, nous vous accueillons dans une ambiance chaleureuse, à deux pas du centre historique de Mantes-la-Jolie.</p>
+        </div>
+        <ul class="features reveal">
+          <li class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10m14 11V10M2 10l10-6 10 6M9 21v-6h6v6"/></svg>
+            <div><h3>Terrasse</h3><p>Aux beaux jours, dînez au grand air.</p></div>
+          </li>
+          <li class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8Zm7 8v8m-4 0h8"/></svg>
+            <div><h3>Excellents cocktails</h3><p>Créations maison, cidres et chouchens.</p></div>
+          </li>
+          <li class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M7 13h10M8 13l-1 8m9-8 1 8M7 17h10"/></svg>
+            <div><h3>Familles bienvenues</h3><p>Chaises hautes à disposition.</p></div>
+          </li>
+          <li class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Zm9-5v5l3 3"/></svg>
+            <div><h3>Fait minute</h3><p>Chaque crêpe est préparée à la commande.</p></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== Carte ===== -->
+    <section class="section section--alt" id="carte">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">La carte</p>
+          <h2>Nos galettes &amp; crêpes</h2>
+          <p class="muted">Une sélection de nos incontournables. La carte complète et les suggestions du moment sont à découvrir sur place.</p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Catégories de la carte">
+          <button class="tab is-active" role="tab" aria-selected="true" aria-controls="panel-galettes" id="tab-galettes">Galettes salées</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="panel-crepes" id="tab-crepes" tabindex="-1">Crêpes sucrées</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="panel-boissons" id="tab-boissons" tabindex="-1">Boissons</button>
+        </div>
+
+        <!-- Prix indicatifs : à ajuster selon la carte réelle -->
+        <div class="menu-panel is-active" role="tabpanel" id="panel-galettes" aria-labelledby="tab-galettes">
+          <ul class="menu">
+            <li class="menu__item"><div><h3>Complète</h3><p>Jambon, emmental, œuf miroir</p></div><span class="price">10,50 €</span></li>
+            <li class="menu__item"><div><h3>L'Armor <em class="tag">Signature</em></h3><p>Andouille de Guémené, pommes poêlées, emmental, crème</p></div><span class="price">14,50 €</span></li>
+            <li class="menu__item"><div><h3>Chèvre-miel</h3><p>Chèvre, miel, noix, salade</p></div><span class="price">12,50 €</span></li>
+            <li class="menu__item"><div><h3>Forestière</h3><p>Champignons, lardons, crème, emmental</p></div><span class="price">13,00 €</span></li>
+            <li class="menu__item"><div><h3>Saint-Jacques</h3><p>Noix de Saint-Jacques, fondue de poireaux, crème</p></div><span class="price">17,50 €</span></li>
+            <li class="menu__item"><div><h3>Raclette</h3><p>Raclette, pommes de terre, jambon cru, oignons</p></div><span class="price">14,00 €</span></li>
+            <li class="menu__item"><div><h3>Végétarienne</h3><p>Légumes du moment, fromage frais, herbes</p></div><span class="price">12,00 €</span></li>
+            <li class="menu__item"><div><h3>Saumon</h3><p>Saumon fumé, crème citronnée, aneth, salade</p></div><span class="price">14,50 €</span></li>
+          </ul>
+        </div>
+
+        <div class="menu-panel" role="tabpanel" id="panel-crepes" aria-labelledby="tab-crepes" hidden>
+          <ul class="menu">
+            <li class="menu__item"><div><h3>Beurre-sucre</h3><p>Le grand classique</p></div><span class="price">4,50 €</span></li>
+            <li class="menu__item"><div><h3>Caramel beurre salé <em class="tag">Maison</em></h3><p>Notre caramel au beurre demi-sel</p></div><span class="price">6,50 €</span></li>
+            <li class="menu__item"><div><h3>Chocolat-banane</h3><p>Chocolat fondu, banane fraîche</p></div><span class="price">7,00 €</span></li>
+            <li class="menu__item"><div><h3>Suzette</h3><p>Beurre à l'orange, flambée au Grand Marnier</p></div><span class="price">9,00 €</span></li>
+            <li class="menu__item"><div><h3>Normande</h3><p>Pommes caramélisées, flambée au calvados</p></div><span class="price">8,50 €</span></li>
+            <li class="menu__item"><div><h3>Bretonne</h3><p>Pommes, caramel beurre salé, boule de glace vanille</p></div><span class="price">9,00 €</span></li>
+          </ul>
+        </div>
+
+        <div class="menu-panel" role="tabpanel" id="panel-boissons" aria-labelledby="tab-boissons" hidden>
+          <ul class="menu">
+            <li class="menu__item"><div><h3>Cidre brut ou doux</h3><p>Bolée / bouteille 75 cl</p></div><span class="price">4 € / 16 €</span></li>
+            <li class="menu__item"><div><h3>Chouchen</h3><p>Hydromel breton, en apéritif</p></div><span class="price">5,00 €</span></li>
+            <li class="menu__item"><div><h3>Kir breton</h3><p>Cidre et crème de cassis</p></div><span class="price">5,50 €</span></li>
+            <li class="menu__item"><div><h3>Cocktails maison <em class="tag">Coup de cœur</em></h3><p>Demandez la création du moment</p></div><span class="price">9,00 €</span></li>
+            <li class="menu__item"><div><h3>Mocktails</h3><p>Cocktails sans alcool, fruits frais</p></div><span class="price">6,50 €</span></li>
+            <li class="menu__item"><div><h3>Breizh Cola &amp; softs</h3><p>Jus de pomme artisanal, limonade</p></div><span class="price">3,50 €</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Avis ===== -->
+    <section class="section" id="avis">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Ils en parlent</p>
+          <h2>4,6 sur 5, avec près de 700 avis</h2>
+        </div>
+        <div class="rating reveal">
+          <div class="rating__score">4,6</div>
+          <div>
+            <div class="rating__stars" aria-label="Note de 4,6 sur 5"><span style="--w: 92%"></span></div>
+            <p class="muted">Note moyenne sur Google · 699 avis</p>
+          </div>
+        </div>
+        <p class="center reveal">
+          <a class="btn btn--outline" href="https://www.google.com/maps/search/?api=1&query=L%27Armor+Cr%C3%AAperie+29+Rue+Porte+aux+Saints+78200+Mantes-la-Jolie" target="_blank" rel="noopener">Lire les avis sur Google</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== Infos pratiques ===== -->
+    <section class="section section--dark" id="infos">
+      <div class="container infos">
+        <div class="infos__col reveal">
+          <p class="eyebrow eyebrow--light">Infos pratiques</p>
+          <h2>Venir nous voir</h2>
+
+          <div class="info-block">
+            <h3>Adresse</h3>
+            <p>29 Rue Porte aux Saints<br>78200 Mantes-la-Jolie</p>
+            <a class="link" href="https://www.google.com/maps/dir/?api=1&destination=29+Rue+Porte+aux+Saints+78200+Mantes-la-Jolie" target="_blank" rel="noopener">Itinéraire →</a>
+          </div>
+
+          <div class="info-block">
+            <h3>Réservation</h3>
+            <p><a class="link link--big" href="tel:+33130922039">01 30 92 20 39</a></p>
+            <p class="small">Conseillée le week-end et pour les groupes.</p>
+          </div>
+
+          <div class="info-block">
+            <h3>Horaires</h3>
+            <!-- Horaires à compléter/confirmer : seule l'ouverture du soir à 19h est connue -->
+            <table class="hours">
+              <tbody>
+                <tr data-day="1"><th>Lundi</th><td>19h00 – 22h30</td></tr>
+                <tr data-day="2"><th>Mardi</th><td>19h00 – 22h30</td></tr>
+                <tr data-day="3"><th>Mercredi</th><td>19h00 – 22h30</td></tr>
+                <tr data-day="4"><th>Jeudi</th><td>19h00 – 22h30</td></tr>
+                <tr data-day="5"><th>Vendredi</th><td>19h00 – 23h00</td></tr>
+                <tr data-day="6"><th>Samedi</th><td>19h00 – 23h00</td></tr>
+                <tr data-day="0"><th>Dimanche</th><td>19h00 – 22h30</td></tr>
+              </tbody>
+            </table>
+            <p class="small">Horaires susceptibles de varier, appelez-nous en cas de doute.</p>
+          </div>
+        </div>
+
+        <div class="infos__map reveal">
+          <iframe
+            title="Carte : L'Armor, 29 Rue Porte aux Saints, Mantes-la-Jolie"
+            src="https://www.google.com/maps?q=29+Rue+Porte+aux+Saints,+78200+Mantes-la-Jolie&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Appel à l'action ===== -->
+    <section class="cta">
+      <div class="container cta__inner">
+        <h2>Une envie de galette ce soir ?</h2>
+        <a href="tel:+33130922039" class="btn">Appeler pour réserver</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <p class="footer__brand">L'Armor</p>
+        <p>Crêperie bretonne · 29 Rue Porte aux Saints, 78200 Mantes-la-Jolie</p>
+      </div>
+      <div>
+        <p><a href="tel:+33130922039">01 30 92 20 39</a></p>
+        <p class="small">© <span id="year"></span> L'Armor. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bouton d'appel flottant (mobile) -->
+  <a href="tel:+33130922039" class="call-fab" aria-label="Appeler L'Armor">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1Z" fill="currentColor"/></svg>
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
